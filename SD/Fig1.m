@@ -13,11 +13,11 @@ figHeight = 8.6;   % 세로 [cm]
 % ---------------------------
 col1Left   = 0.13;  % 왼쪽 offset
 subplotW   = 0.33;  % (a), (b)의 폭
-marginH    = 0.12;  % (a)와 (b) 사이의 수평 간격
+marginH    = 0.13;  % (a)와 (b) 사이의 수평 간격
 row1Bottom = 0.58;  % (a), (b) 서브플롯의 아래쪽
 subplotH   = 0.35;  % (a), (b) 서브플롯의 높이
-marginV    = 0.10;  % 위/아래 subplot 간 수직 간격
-cWidth     = 0.78;  % (c)의 폭
+marginV    = 0.13;  % 위/아래 subplot 간 수직 간격
+cWidth     = 0.79;  % (c)의 폭 (조정 가능)
 
 % (c) 서브플롯의 아래 위치
 row2Bottom = row1Bottom - subplotH - marginV;
@@ -49,7 +49,7 @@ legendTokenSize   = 4;     % Legend 아이콘(박스/선) 간격(값 작을수�
 % [left bottom width height] (normalized)
 legendPosA = [0.12 0.83 0.15 0.10];  % (a)
 legendPosB = [0.58 0.83 0.15 0.10];  % (b)
-legendPosC = [0.67 0.14 0.25 0.10];  % (c)
+legendPosC = [0.67 0.11 0.25 0.10];  % (c)
 
 % ---------------------------
 % (F) Current / Voltage Label Offset
