@@ -136,12 +136,10 @@ figure('Name', [AS_name, ' Type ', selected_type, ': DRT Comparison (All)'], ...
        'NumberTitle', 'off');
 hold on;
 for s = 1:num_scenarios
-    % --- Prepare data for scenario s ---
-    % theta_s might be Nx1 -> convert to 1xN for fill
-    theta_s   = theta_discrete_all{s}(:).';        % Force row
-    gamma_est = gamma_est_all{s}(:).';             % Force row (though it's probably already 1xN)
-    gamma_l   = gamma_lower_all{s}(:).';           % Force row
-    gamma_u   = gamma_upper_all{s}(:).';           % Force row
+    theta_s   = theta_discrete_all{s}(:).';        
+    gamma_est = gamma_est_all{s}(:).';             
+    gamma_l   = gamma_lower_all{s}(:).';           
+    gamma_u   = gamma_upper_all{s}(:).';          
     plotColor = c_mat(s, :);
 
     a = theta_s;
