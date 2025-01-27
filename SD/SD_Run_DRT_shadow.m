@@ -161,7 +161,6 @@ for s = 1:num_scenarios
 end
 
 % --- Plot the true gamma as a reference ---
-% true gamma도 만약 행 벡터로 바꾸고 싶다면:
 theta_true_row = theta_true(:).';
 gamma_true_row = gamma_discrete_true(:).';
 plot(theta_true_row, gamma_true_row, 'k-', 'LineWidth', 2, ...
