@@ -149,7 +149,7 @@ for s = 1:num_scenarios
     plot(th_s, ge_s, 'LineWidth',1.5, 'Color',plotColor);
 
     % true gamma
-    plot(theta_true, gamma_discrete_true, 'k--','LineWidth',1.5);
+    plot(theta_true, gamma_discrete_true, 'k-','LineWidth',1.5);
 
     xlabel('\theta','FontSize',labelFontSize);
     ylabel('\gamma','FontSize',labelFontSize);
