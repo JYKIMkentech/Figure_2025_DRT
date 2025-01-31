@@ -1,100 +1,163 @@
-%% DRT_compare_effects_script.m
-%  목적:
-%   - 이미 계산/저장되어 있는 DRT 결과(.mat 파일)를 불러온 뒤,
-%   - Effect of dt/dur/N을 보고자 하는 타입들을 선택(A, B, C, D, ...)하여
-%   - 시나리오 1, 5, 10만 비교 플롯한다.
-
+%% (0) 초기화 및 사용자 설정
 clc; clear; close all;
 
-%% (1) 사용자 입력: 어떤 효과를 비교할 것인가?
-disp('1) Effect of dt  => 비교군: A, D, E, F');
-disp('2) Effect of dur => 비교군: A, G, H');
-disp('3) Effect of N   => 비교군: A, B, C');
-effectChoice = input('원하는 번호를 입력하세요(1~3): ');
+% ----- 공통 스타일 파라미터 -----
+lineWidthValue     = 1.5;  % 선 굵기
+fillAlpha          = 0.3;  % 불확도 영역 투명도
+axisFontSize       = 8;    % x, y축 라벨 및 tick 폰트 크기
+legendFontSize     = 6;    % 범례 폰트 크기
+annotationFontSize = 9;    % (a), (b), (c) 라벨 폰트 크기
+legendTokenSize    = 4;    % 범례 아이콘(박스/선) 길이
+
+% ----- Subplot Labels 및 위치 설정 -----
+subplotLabels = {'(a)','(b)','(c)'}; 
+labelPositions = [-0.25 1.05;
+                  -0.25 1.05;
+                  -0.25 1.05];
+
+% ----- Figure 및 Subplot 레이아웃 설정 -----
+figWidth  = 18;  
+figHeight = 8;   
+
+leftMargin   = 0.12;  
+rightMargin  = 0.07;  
+topMargin    = 0.08;  
+bottomMargin = 0.15;
+midGap       = 0.07;  
+
+legendPosA = [0.25, 0.77, 0.10, 0.10];
+legendPosB = [0.54, 0.77, 0.10, 0.10];
+legendPosC = [0.84, 0.77, 0.10, 0.10];
+
+% ----- 색상 팔레트 정의 -----
+p_colors = [
+    0.00000, 0.44706, 0.74118;  % Blue
+    0.93725, 0.75294, 0.00000;  % Yellow
+    0.80392, 0.32549, 0.29803;  % Red
+    0.12549, 0.52157, 0.30588;  % Green
+];
+
+%% (1) 효과 선택
+disp('1) Effect of dt  => compare group: A, D, E, F');
+disp('2) Effect of dur => compare group: A, G, H');
+disp('3) Effect of N   => compare group: A, B, C');
+effectChoice = input('Enter a number (1~3): ');
 
 switch effectChoice
     case 1
-        effectName = 'dt';
-        typeGroup  = {'A','D','E','F'};
+        effectName   = 'dt';
+        typeGroup    = {'A','D','E','F'};  
+        legendLabels = {'dt=0.1','dt=0.2','dt=1','dt=2'};  
     case 2
-        effectName = 'dur';
-        typeGroup  = {'A','G','H'};
+        effectName   = 'dur';
+        typeGroup    = {'A','G','H'};
+        legendLabels = {'Dur=1000','Dur=500','Dur=250'};  
     case 3
-        effectName = 'N';
-        typeGroup  = {'A','B','C'};
+        effectName   = 'N';
+        typeGroup    = {'A','B','C'};
+        legendLabels = {'N=201','N=101','N=21'};          
     otherwise
-        error('입력값이 잘못되었습니다. 1~3 중 하나를 골라주세요.');
+        error('Invalid choice. Please choose 1, 2, or 3.');
 end
 
-%% (2) 어떤 데이터셋(AS1_1per_new 등)을 불러올 것인지 선택
-%  실제로는 4개 중 하나만 불러오거나, 여러 번 반복할 수도 있습니다.
-%  예시로 "AS1_1per_new.mat"만 불러오도록 해봅니다.
+%% (2) 데이터 로드
 dataFolder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
-dataFile   = 'AS1_1per_new.mat';   % 여기서 원하는 파일명으로 바꿔주세요.
+dataFile   = 'AS1_1per_new.mat'; 
 load(fullfile(dataFolder, dataFile),'AS1_1per_new');
-AS_data = AS1_1per_new;  % 편의상
+AS_data = AS1_1per_new;  % 이 안에 type, SN, theta, gamma_est, ... 등이 있다고 가정
 
-%% (3) 플롯할 시나리오 번호(예: 1,5,10) 설정
+%% (2-1) 참값(Gamma_unimodal.mat) 로드
+trueFile = 'Gamma_unimodal.mat';
+tmp = load(fullfile(dataFolder, trueFile));  
+% tmp.Gamma_unimodal 구조체 안에 theta, gamma가 있다고 가정
+theta_true = tmp.Gamma_unimodal.theta;  % 201×1 double
+gamma_true = tmp.Gamma_unimodal.gamma;  % 201×1 double
+
+%% (3) 시나리오 리스트 (예: 1, 5, 10)
 scenarioList = [1, 5, 10];
+numScenarios = numel(scenarioList);
 
-%% (4) figure 생성 (1 x 3 서브플롯 예시)
+%% (4) Figure 생성
 figure('Name',['Effect of ',effectName,' - ',dataFile], ...
-       'NumberTitle','off','Color','w','Units','normalized',...
-       'Position',[0.1 0.1 0.8 0.4]);
+       'NumberTitle','off','Color','w', ...
+       'Units','centimeters','Position',[2 2 figWidth figHeight]);
 
-% 색상 몇 개 지정 (type마다 다른 색상)
-cMap = lines(numel(typeGroup));
+subplotWidth  = (1 - leftMargin - rightMargin - (numScenarios-1)*midGap) / numScenarios;
+subplotHeight = 1 - topMargin - bottomMargin;
 
-%% (5) 시나리오 반복
-for i = 1:numel(scenarioList)
-    subplot(1, numel(scenarioList), i);
-    hold on;
+%% (5) Subplot 순회하며 그래프
+for i = 1:numScenarios
+    leftPos = leftMargin + (i-1)*(subplotWidth + midGap);
+
+    ax = subplot('Position',[leftPos, bottomMargin, subplotWidth, subplotHeight]);
+    hold(ax,'on');
+    ax.FontSize = axisFontSize;
+
     scenarioNum = scenarioList(i);
 
-    % 해당 시나리오인 데이터들 중, type이 typeGroup에 속하는 항목만 골라 플롯
-    % AS_data에는 여러 type(A,B,C...)과 시나리오(SN)가 섞여 있을 수 있습니다.
-    %  -> (1) type이 typeGroup 중 하나인지 확인
-    %  -> (2) SN == scenarioNum 인지 확인
-    matchIdx = false(size(AS_data));  % 논리벡터
+    % (5-1) 해당 시나리오 + 선택된 type에 해당하는 데이터만 필터
+    matchIdx = false(size(AS_data));
     for k = 1:numel(AS_data)
-        isInGroup   = ismember(AS_data(k).type, typeGroup);
-        isThisScn   = (AS_data(k).SN == scenarioNum);
-        matchIdx(k) = isInGroup && isThisScn;
+        if ismember(AS_data(k).type, typeGroup) && (AS_data(k).SN == scenarioNum)
+            matchIdx(k) = true;
+        end
     end
     selData = AS_data(matchIdx);
 
-    % selData에는 typeGroup 내 해당 시나리오의 결과들이 들어있음
-    % 이제 각각 plot
+    % (5-2) 타입별 추정치 및 불확도 구간 플롯
     for d = 1:numel(selData)
-        tname = selData(d).type;  % 예: 'A', 'D' 등
-        % color index
-        cidx  = find(strcmp(typeGroup,tname));  
-        plotCol = cMap(cidx,:);
-
-        % theta, gamma
+        tname       = selData(d).type;
+        cidx        = find(strcmp(typeGroup, tname));  % 색깔 인덱스
         theta_est   = selData(d).theta;
         gamma_est   = selData(d).gamma_est;
         gamma_lower = selData(d).gamma_lower;
         gamma_upper = selData(d).gamma_upper;
 
-        % 불확실성 구간 fill
+        % 불확도 영역 (fill)
         fill([theta_est; flipud(theta_est)], ...
              [gamma_lower; flipud(gamma_upper)], ...
-             plotCol, 'FaceAlpha',0.2, 'EdgeColor','none');
-        % 추정값 선
-        plot(theta_est, gamma_est, 'LineWidth',1.5, ...
-             'Color', plotCol, 'DisplayName',...
-             [tname,'(SN=',num2str(scenarioNum),')']);
+             p_colors(cidx,:), ...
+             'FaceAlpha', fillAlpha, ...
+             'EdgeColor','none', ...
+             'HandleVisibility','off');
+
+        % 추정 곡선 (legend 표시)
+        plot(theta_est, gamma_est, ...
+             'LineWidth', lineWidthValue, ...
+             'Color', p_colors(cidx,:), ...
+             'DisplayName', legendLabels{cidx});
     end
 
-    xlabel('\theta (ln(\tau))');
-    ylabel('\gamma (Ohm)');
-    title(['Scenario ', num2str(scenarioNum)]);
-    legend('Location','best','Box','off');
-    grid on; box on;
+    % (5-3) 참값 곡선 (Gamma_unimodal) 플롯
+    %      모든 subplot에서 동일한 참값을 그린다고 가정
+    plot(theta_true, gamma_true, ...
+         'k-', 'LineWidth', 1.8, ...
+         'DisplayName', 'True'); 
+
+    % (5-4) 축 레이블
+    xlabel('$\theta = \ln(\tau\,[\mathrm{s}])$','Interpreter','latex','FontSize',axisFontSize);
+    ylabel('$\gamma~(\Omega)$','Interpreter','latex','FontSize',axisFontSize);
+    box(ax,'on');
+
+    % (5-5) 서브플롯 (a), (b), (c) 라벨
+    text(ax, labelPositions(i,1), labelPositions(i,2), subplotLabels{i}, ...
+        'Units','normalized', ...
+        'FontSize', annotationFontSize, ...
+        'FontWeight','bold');
+
+    % (5-6) 범례
+    hLeg = legend('Location','none','Box','off','FontSize',legendFontSize);
+    set(hLeg, 'ItemTokenSize', [legendTokenSize, legendTokenSize]); 
+    switch i
+        case 1
+            set(hLeg,'Position',legendPosA);
+        case 2
+            set(hLeg,'Position',legendPosB);
+        case 3
+            set(hLeg,'Position',legendPosC);
+    end
 end
 
-sgtitle(['Effect of ', effectName, ' - compare types: ', strjoin(typeGroup, ', ')]);
+%% (Optional) 그래프 파일로 저장
+exportgraphics(gcf, ['Compare_',effectName,'_',dataFile,'.png'],'Resolution',300);
 
-%% (6) (옵션) 그림 저장
-% exportgraphics(gcf, ['Compare_',effectName,'_',dataFile,'.png'],'Resolution',300);
