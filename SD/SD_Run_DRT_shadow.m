@@ -91,7 +91,7 @@ gamma_lower_all    = cell(num_scenarios, 1);
 gamma_upper_all    = cell(num_scenarios, 1);
 
 % Variables to store uncertainty estimation results
-num_resamples = 500;  % Number of bootstrap resamples
+num_resamples = 100;  % Number of bootstrap resamples
 gamma_resample_all_scenarios = cell(num_scenarios, 1);
 
 % Loop over scenarios
@@ -107,7 +107,7 @@ for s = 1:num_scenarios
     dt     = scenario_data.dt;           % dt value
     dur    = scenario_data.dur;          % Duration value
     n      = scenario_data.n;            % Number of RC elements
-    lambda = scenario_data.Lambda_hat;   % Regularization parameter (?)
+    lambda = scenario_data.Lambda_hat;   % Regularization parameter 
 
     % DRT estimation
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...

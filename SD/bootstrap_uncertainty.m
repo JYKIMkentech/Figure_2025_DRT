@@ -41,7 +41,7 @@ function [gamma_lower, gamma_upper, gamma_resample_all] = bootstrap_uncertainty(
         % Recalculate dt_resampled
         dt_resampled = [t_resampled_sorted(1); diff(t_resampled_sorted)];
 
-       [gamma_resample, ~, ~, ~, ~] = DRT_estimation(t_resampled_sorted, ik_resampled_sorted, V_sd_resampled_sorted, lambda, n, dt_resampled, dur, OCV, R0);
+       [gamma_resample, ~, ~, ~, ~] = DRT_estimation(t_resampled_sorted, ik_resampled_sorted, V_sd_resampled_sorted, lambda, n, dt_resampled,dur,OCV, R0);
 
         % Store resampled gamma
         gamma_resample_all(b, :) = gamma_resample';
