@@ -1,134 +1,218 @@
-%% figure_for_paper.m
 clc; clear; close all;
 
-%% (1) Figure 및 Subplot 배치 설정
-figWidth  = 18;  % cm 단위 (가로)
-figHeight = 12;  % cm 단위 (세로)
+%% ========== (0) Plot 스타일/배치 파라미터 ==========
+
+% [A] Figure 크기
+figWidth  = 18;  % [cm]
+figHeight = 12;  % [cm]
+
+% [B] 폰트 사이즈
+axisTickFontSize  = 4;   % 축 눈금 폰트 크기
+axisLabelFontSize = 5;   % 축 라벨 폰트 크기
+legendFontSize    = 6;   % 범례 폰트 사이즈
+
+% 선 굵기
+lineWidthMeas = 1;
+lineWidthEst  = 1;
+lineWidthCurr = 1;
+lineWidthSOC  = 1;
+
+% [C] 색상 팔레트
+p_colors = [
+    0.00000, 0.45098, 0.76078;  % #1 (Blue)
+    0.93725, 0.75294, 0.00000;  % #2 (Yellow)
+    0.80392, 0.32549, 0.29803;  % #3 (Red)
+    0.12549, 0.52157, 0.30588;  % #4 (Green)
+    0.57255, 0.36863, 0.62353;  % #5
+    0.88235, 0.52941, 0.15294;  % #6
+    0.30196, 0.73333, 0.83529;  % #7
+    0.93333, 0.29803, 0.59216;  % #8
+    0.49412, 0.38039, 0.28235;  % #9
+    0.45490, 0.46275, 0.47059   % #10
+];
+
+% [D] 서브플롯 배치 관련
+nRow = 2;
+nCol = 3;
+leftMargin   = 0.08;  
+rightMargin  = 0.03;  
+topMargin    = 0.07;  
+bottomMargin = 0.10;  
+gapX = 0.05;          
+gapY = 0.13;          
+
+% [E] Annotation( (a), (b), (c)... ) 위치 지정
+annotationOffsetX = -0.06;   
+annotationOffsetY = 1.11;    
+annotationBoxW    = 0.03;  
+annotationBoxH    = 0.03;  
+
+% (b)에서 R0 텍스트 위치(축 범위를 기준으로 비율)
+R0_xOffset = -0.1;  
+R0_yOffset = 0.2;   
+
+% [F] Legend 'Position' 설정 (각 서브플롯별)
+legendPosA = [0.23 0.58 0.10 0.15];
+legendPosB = [0.40 0.75 0.10 0.10];
+legendPosC = [0.69 0.58 0.10 0.15];
+legendPosD = [0.07 0.1  0.10 0.15];
+legendPosE = [0.52 0.58 0.10 0.15];
+legendPosF = [0.69 0.10 0.10 0.15];
+
+% [G] Legend 선 길이 (ItemTokenSize)
+legendItemTokenSize = [3, 4];
+
+%% ========== (1) Figure 생성 ==========
 
 figure('Units','centimeters','Position',[3 3 figWidth figHeight]);
 
-% 2행 × 3열 형태로 Subplot 배치: (a)~(f)
-pos_a = [0.07 0.57 0.26 0.35];  % (a) Trip 1 전압 비교
-pos_b = [0.41 0.57 0.26 0.35];  % (b) Trip 1 DRT
-pos_c = [0.75 0.57 0.20 0.35];  % (c) Trip 1 SOC
-pos_d = [0.07 0.10 0.26 0.35];  % (d) Trip 전체 전압 비교
-pos_e = [0.41 0.10 0.26 0.35];  % (e) Trip 전체 3D DRT
-pos_f = [0.75 0.10 0.20 0.35];  % (f) Trip 전체 SOC
+%% (1-1) 서브플롯 배치 계산
+subplotWidth  = (1 - leftMargin - rightMargin - (nCol-1)*gapX) / nCol;
+subplotHeight = (1 - topMargin - bottomMargin - (nRow-1)*gapY) / nRow;
 
-%% (2) 데이터 불러오기
-load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat', ...
+pos = zeros(nRow*nCol,4);
+
+row1_y = 1 - topMargin - subplotHeight;
+pos(1,:) = [leftMargin,                       row1_y, subplotWidth, subplotHeight];  % (a)
+pos(2,:) = [leftMargin+1*(subplotWidth+gapX), row1_y, subplotWidth, subplotHeight];  % (b)
+pos(3,:) = [leftMargin+2*(subplotWidth+gapX), row1_y, subplotWidth, subplotHeight];  % (c)
+
+row2_y = row1_y - subplotHeight - gapY;
+pos(4,:) = [leftMargin,                       row2_y, subplotWidth, subplotHeight];  % (d)
+pos(5,:) = [leftMargin+1*(subplotWidth+gapX), row2_y, subplotWidth, subplotHeight];  % (e)
+pos(6,:) = [leftMargin+2*(subplotWidth+gapX), row2_y, subplotWidth, subplotHeight];  % (f)
+
+%% (2) 예시 데이터 불러오기
+load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat',...
      'udds_data_soc_results');
 num_trips = length(udds_data_soc_results);
 
-%% ================= (a) Trip 1 전압 비교 =========================
-subplot('Position', pos_a);
-trip_idx = 1;  % Trip 1
+%% ============== (a) Trip 1 전압 비교 ==============
+subplot('Position', pos(1,:));
+trip_idx = 1;
 t       = udds_data_soc_results(trip_idx).t;
 V_meas  = udds_data_soc_results(trip_idx).V;
-V_drt   = udds_data_soc_results(trip_idx).V_est;  % DRT 추정 전압
+V_drt   = udds_data_soc_results(trip_idx).V_est;
 I       = udds_data_soc_results(trip_idx).I;
 
 yyaxis left
-p1 = plot(t, V_meas, 'k-', 'LineWidth', 1.2, 'DisplayName', 'Measured V');
+p1 = plot(t, V_meas, 'LineWidth', lineWidthMeas, ...
+    'Color', p_colors(1,:), 'LineStyle','-', 'DisplayName', 'Mea. V');
 hold on;
-p2 = plot(t, V_drt,  'r--','LineWidth', 1.2, 'DisplayName', 'Estimated V (DRT)');
-ylabel('Voltage [V]');
-%title('Trip 1 전압 비교');  % 주석처리
+p2 = plot(t, V_drt,  'LineWidth', lineWidthEst,  ...
+    'Color', p_colors(3,:), 'LineStyle','-', 'DisplayName', 'Est. V');
+ylabel('Voltage [V]', 'FontSize', axisLabelFontSize);
 
 yyaxis right
-p3 = plot(t, I, 'b-', 'LineWidth', 1.0, 'DisplayName', 'Current');
-ylabel('Current [A]');
-xlabel('Time [s]');
+p3 = plot(t, I, 'LineWidth', lineWidthCurr, ...
+    'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName', 'Current');
+ylabel('Current [A]', 'FontSize', axisLabelFontSize);
+xlabel('Time [s]', 'FontSize', axisLabelFontSize);
 
-legend([p1 p2 p3],'Location','best');
-set(gca, 'FontSize', 9);
+% 눈금 폰트 설정
+yyaxis left;  set(gca, 'YColor','k','XColor','k', 'FontSize', axisTickFontSize);
+yyaxis right; set(gca, 'YColor','k','XColor','k', 'FontSize', axisTickFontSize);
 
-% (a) 라벨
-annotation('textbox',[pos_a(1) pos_a(2)+pos_a(4)*0.97 0.03 0.03], ...
+leg_a = legend([p1 p2 p3]);
+set(leg_a, 'Position', legendPosA, 'FontSize', legendFontSize, ...
+           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+
+annotation('textbox', [pos(1,1)+annotationOffsetX, ...
+                       pos(1,2)+pos(1,4)*annotationOffsetY, ...
+                       annotationBoxW, annotationBoxH], ...
            'String','(a)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
-%% ================== (b) Trip 1 DRT ==============================
-subplot('Position', pos_b);
+%% =============== (b) Trip 1 DRT ===============
+subplot('Position', pos(2,:));
 theta_1 = udds_data_soc_results(trip_idx).theta_discrete;
 gamma_1 = udds_data_soc_results(trip_idx).gamma_est;
 R0_1    = udds_data_soc_results(trip_idx).R0_est;
 
-plot(theta_1, gamma_1, 'm-', 'LineWidth', 1.5);
+plot(theta_1, gamma_1, 'LineWidth', 1.5, ...
+    'Color', p_colors(8,:), 'LineStyle','-', 'DisplayName','DRT');
 hold on;
-xlabel('\theta = ln(\tau [s])');
-ylabel('\gamma [\Omega]');
-%title('Trip 1 DRT');  % 주석처리
+xlabel('\theta = ln(\tau [s])', 'FontSize', axisLabelFontSize);
+ylabel('\gamma [\Omega]', 'FontSize', axisLabelFontSize);
 
-% R0 값 텍스트로 표시
+% R0 텍스트
 str_R0 = sprintf('R_0 = %.3e \\Omega', R0_1);
 xrange = xlim; yrange = ylim;
-text(xrange(1)+0.05*(xrange(2)-xrange(1)), ...
-     yrange(2)-0.10*(yrange(2)-yrange(1)), ...
-     str_R0, 'FontSize',9,'Interpreter','tex','Color','k');
+x_text = xrange(1) + R0_xOffset*(xrange(2)-xrange(1));
+y_text = yrange(2) - R0_yOffset*(yrange(2)-yrange(1));
+text(x_text, y_text, str_R0, 'FontSize', axisTickFontSize, ...
+     'Interpreter','tex','Color','k');
 
-set(gca, 'FontSize', 9);
+set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
 
-% (b) 라벨
-annotation('textbox',[pos_b(1) pos_b(2)+pos_b(4)*0.97 0.03 0.03], ...
+annotation('textbox', [pos(2,1)+annotationOffsetX,...
+                       pos(2,2)+pos(2,4)*annotationOffsetY,...
+                       annotationBoxW, annotationBoxH], ...
            'String','(b)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
-%% =========== (c) Trip 1 SOC 비교 (4개 모델) ====================
-subplot('Position', pos_c);
+%% =========== (c) Trip 1 SOC 비교 ===========
+subplot('Position', pos(3,:));
 CC_1   = udds_data_soc_results(trip_idx).CC_SOC;
 SOC1RC = udds_data_soc_results(trip_idx).SOC_1RC;
 SOC2RC = udds_data_soc_results(trip_idx).SOC_2RC;
 SOCDRT = udds_data_soc_results(trip_idx).SOC_DRT;
 
-p1c = plot(t, CC_1,   'k-', 'LineWidth',1.3, 'DisplayName','CC'); hold on;
-p2c = plot(t, SOC1RC, 'b--','LineWidth',1.3, 'DisplayName','1RC');
-p3c = plot(t, SOC2RC, 'r-.','LineWidth',1.3, 'DisplayName','2RC');
-p4c = plot(t, SOCDRT, 'g-','LineWidth',1.3, 'DisplayName','DRT');
-xlabel('Time [s]');
-ylabel('SOC');
-%title('Trip 1 SOC 비교');  % 주석처리
-legend([p1c p2c p3c p4c], 'Location','best');
-set(gca, 'FontSize', 9);
+p1c = plot(t, CC_1,   'LineWidth', lineWidthSOC,...
+    'Color', p_colors(1,:), 'LineStyle','-', 'DisplayName','CC'); hold on;
+p2c = plot(t, SOC1RC, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(3,:), 'LineStyle','-', 'DisplayName','1RC');
+p3c = plot(t, SOC2RC, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(2,:), 'LineStyle','-', 'DisplayName','2RC');
+p4c = plot(t, SOCDRT, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','DRT');
 
-annotation('textbox',[pos_c(1) pos_c(2)+pos_c(4)*0.97 0.03 0.03], ...
+xlabel('Time [s]', 'FontSize', axisLabelFontSize);
+ylabel('SOC', 'FontSize', axisLabelFontSize);
+
+leg_c = legend([p1c p2c p3c p4c]);
+set(leg_c, 'Position', legendPosC, 'FontSize', legendFontSize, ...
+           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+
+set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
+
+annotation('textbox', [pos(3,1)+annotationOffsetX,...
+                       pos(3,2)+pos(3,4)*annotationOffsetY,...
+                       annotationBoxW, annotationBoxH], ...
            'String','(c)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
-%% ========= (d) Trip 전체 전압 비교 (연속) ========================
-subplot('Position', pos_d);
-full_t   = [];
-full_V   = [];
-full_Vdrt= [];
-full_I   = [];
+%% ========= (d) Trip 전체 전압 비교 =========
+subplot('Position', pos(4,:));
+full_t    = [];
+full_V    = [];
+full_Vdrt = [];
 
 for s = 1:num_trips-1
     full_t    = [full_t;    udds_data_soc_results(s).Time_duration];
     full_V    = [full_V;    udds_data_soc_results(s).V];
     full_Vdrt = [full_Vdrt; udds_data_soc_results(s).V_est];
-    full_I    = [full_I;    udds_data_soc_results(s).I];
 end
 
-yyaxis left
-p1d = plot(full_t, full_V, 'k-', 'LineWidth',1.0, 'DisplayName','Measured V');
+p1d = plot(full_t, full_V, 'LineWidth', lineWidthMeas,...
+    'Color', p_colors(1,:), 'LineStyle','-', 'DisplayName','Mea. V');
 hold on;
-p2d = plot(full_t, full_Vdrt,'r--','LineWidth',1.0,'DisplayName','Estimated V (DRT)');
-ylabel('Voltage [V]');
-%title('Trip 전체 전압 비교');  % 주석처리
+p2d = plot(full_t, full_Vdrt, 'LineWidth', lineWidthEst,...
+    'Color', p_colors(3,:), 'LineStyle','-', 'DisplayName','Est. V');
+ylabel('Voltage [V]', 'FontSize', axisLabelFontSize);
+xlabel('Time [s]', 'FontSize', axisLabelFontSize);
 
-yyaxis right
-p3d = plot(full_t, full_I, 'b-','LineWidth',0.8,'DisplayName','Current');
-ylabel('Current [A]');
-xlabel('Time [s]');
+set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
 
-legend([p1d p2d p3d],'Location','best');
-set(gca, 'FontSize', 9);
+leg_d = legend([p1d p2d]);
+set(leg_d, 'Position', legendPosD, 'FontSize', legendFontSize, ...
+           'Box','off', 'ItemTokenSize', legendItemTokenSize);
 
-annotation('textbox',[pos_d(1) pos_d(2)+pos_d(4)*0.97 0.03 0.03], ...
+annotation('textbox', [pos(4,1)+annotationOffsetX,...
+                       pos(4,2)+pos(4,4)*annotationOffsetY,...
+                       annotationBoxW, annotationBoxH], ...
            'String','(d)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
-%% ============ (e) Trip 전체 3D DRT ==============================
-subplot('Position', pos_e); 
+%% =========== (e) Trip 전체 3D DRT ===========
+subplot('Position', pos(5,:)); 
 hold on;
-
-% Trip별 평균 SOC (DRT 기준) 사용 예시
 soc_mid_all = zeros(num_trips,1);
 for s = 1:num_trips-1
     soc_vals = udds_data_soc_results(s).SOC_DRT;
@@ -139,21 +223,24 @@ for s = 1:num_trips-1
     sox   = soc_mid_all(s);
     thvec = udds_data_soc_results(s).theta_discrete;
     gmvec = udds_data_soc_results(s).gamma_est;
-    plot3(sox*ones(size(thvec)), thvec, gmvec, 'LineWidth',1.2);
+    plot3(sox*ones(size(thvec)), thvec, gmvec,...
+          'LineWidth', 1.2, 'Color', p_colors(mod(s-1,10)+1,:), ...
+          'DisplayName', sprintf('Trip %d',s));
 end
 
-xlabel('SOC');
-ylabel('\theta = ln(\tau [s])');
-zlabel('\gamma [\Omega]');
-%title('Trip 전체 3D DRT');  % 주석처리
-set(gca, 'FontSize', 9);
+xlabel('SOC', 'FontSize', axisLabelFontSize);
+ylabel('\theta = ln(\tau [s])', 'FontSize', axisLabelFontSize);
+zlabel('\gamma [\Omega]', 'FontSize', axisLabelFontSize);
 view(135, 30);
+set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k','ZColor','k');
 
-annotation('textbox',[pos_e(1) pos_e(2)+pos_e(4)*0.97 0.03 0.03], ...
+annotation('textbox', [pos(5,1)+annotationOffsetX,...
+                       pos(5,2)+pos(5,4)*annotationOffsetY,...
+                       annotationBoxW, annotationBoxH], ...
            'String','(e)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
-%% ========== (f) Trip 전체 SOC 비교 (4개 모델) ==================
-subplot('Position', pos_f);
+%% =========== (f) Trip 전체 SOC 비교 ===========
+subplot('Position', pos(6,:));
 full_t2   = [];
 full_cc   = [];
 full_1rc  = [];
@@ -168,20 +255,31 @@ for s = 1:num_trips-1
     full_drt = [full_drt; udds_data_soc_results(s).SOC_DRT];
 end
 
-p1f = plot(full_t2, full_cc,  'k-','LineWidth',1.0,'DisplayName','CC'); hold on;
-p2f = plot(full_t2, full_1rc, 'b--','LineWidth',1.0,'DisplayName','1RC');
-p3f = plot(full_t2, full_2rc, 'r-.','LineWidth',1.0,'DisplayName','2RC');
-p4f = plot(full_t2, full_drt, 'g-','LineWidth',1.0,'DisplayName','DRT');
+p1f = plot(full_t2, full_cc,  'LineWidth', lineWidthSOC,...
+    'Color', p_colors(1,:), 'LineStyle','-', 'DisplayName','CC'); hold on;
+p2f = plot(full_t2, full_1rc, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(3,:), 'LineStyle','-', 'DisplayName','1RC');
+p3f = plot(full_t2, full_2rc, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(2,:), 'LineStyle','-', 'DisplayName','2RC');
+p4f = plot(full_t2, full_drt, 'LineWidth', lineWidthSOC,...
+    'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','DRT');
 
-xlabel('Time [s]');
-ylabel('SOC');
-%title('Trip 전체 SOC 비교');  % 주석처리
-legend([p1f p2f p3f p4f],'Location','best');
-set(gca, 'FontSize', 9);
+xlabel('Time [s]', 'FontSize', axisLabelFontSize);
+ylabel('SOC', 'FontSize', axisLabelFontSize);
+xtickformat('%.0f');  % x축 정수 표기
 
-annotation('textbox',[pos_f(1) pos_f(2)+pos_f(4)*0.97 0.03 0.03], ...
+leg_f = legend([p1f p2f p3f p4f]);
+set(leg_f, 'Position', legendPosF, 'FontSize', legendFontSize, ...
+           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+
+set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
+
+annotation('textbox', [pos(6,1)+annotationOffsetX,...
+                       pos(6,2)+pos(6,4)*annotationOffsetY,...
+                       annotationBoxW, annotationBoxH], ...
            'String','(f)','FontSize',10,'FontWeight','bold','LineStyle','none');
 
+%% 최종 그래픽 내보내기
+exportgraphics(gcf, 'Fig2.png','Resolution',300);
 
-annotation('textbox',[pos_f(1) pos_f(2)+pos_f(4)*0.97 0.03 0.03],...
-           'String','(f)','FontSize',10,'FontWeight','bold','LineStyle','none');
+
