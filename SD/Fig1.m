@@ -36,7 +36,7 @@ annOffsetY =  0.03;
 % ---------------------------
 % (D) Line / Font styles
 % ---------------------------
-lineWidthValue    = 1.5;   % 선 굵기
+lineWidthValue    = 1;   % 선 굵기
 fillAlpha         = 0.3;   % fill 투명도
 axisFontSize      = 8;     % 축 라벨/틱 폰트 크기
 legendFontSize    = 6;     % 범례 폰트 크기
@@ -56,8 +56,7 @@ legendPosC = [0.67 0.11 0.25 0.10];  % (c)
 % ---------------------------
 %  -> (c) subplot에서 축 라벨을 축과 더 가깝게 (혹은 멀게) 조정
 currentLabelOffsetX = +0.05;  % 왼쪽 축 라벨 X 위치를 기존 대비 +0.05
-voltageLabelOffsetX = -30;  % 오른쪽 축 라벨 X 위치를 기존 대비 -0.05
-% 음수면 축 쪽으로 이동, 양수면 축 반대방향으로 이동
+voltageLabelOffsetX = -30;    % 오른쪽 축 라벨 X 위치를 기존 대비 (값 조정)
 
 %% (1) Load Data
 load('DRT_estimation_results.mat','drt_output');
@@ -111,10 +110,13 @@ gamma_est_uni   = drt_output(1).scenario(s).gamma_est;
 gamma_lower_uni = drt_output(1).scenario(s).gamma_lower;
 gamma_upper_uni = drt_output(1).scenario(s).gamma_upper;
 
-fill([theta_est_uni; flipud(theta_est_uni)], ...
+% -- Fill area for Uncertainty (now displayed in legend)
+h_fill_uni = fill([theta_est_uni; flipud(theta_est_uni)], ...
      [gamma_lower_uni; flipud(gamma_upper_uni)], ...
-     color_scenario1, 'FaceAlpha',fillAlpha, 'EdgeColor','none',...
-     'HandleVisibility','off');
+     color_scenario1, ...
+     'FaceAlpha',fillAlpha, ...
+     'EdgeColor','none', ...
+     'DisplayName','Unc.');
 hold on;
 
 h_est_uni = plot(theta_est_uni, gamma_est_uni, ...
@@ -127,11 +129,12 @@ h_true_uni = plot(theta_true_uni, gamma_true_uni, ...
     'DisplayName','True \gamma');
 
 xlabel('\theta','FontSize',axisFontSize);
-ylabel('\gamma [\Omega]','FontSize',axisFontSize);  % gamma 단위 예시
+ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax1,'XColor','k','YColor','k','Box','on');
 hold off;
 
-lgdA = legend([h_est_uni, h_true_uni],...
+% -- Legend includes the fill handle
+lgdA = legend([h_est_uni, h_fill_uni, h_true_uni], ...
     'Location','none','FontSize',legendFontSize);
 lgdA.Position      = legendPosA;
 lgdA.Box           = 'off';
@@ -149,10 +152,13 @@ gamma_est_bi   = drt_output(2).scenario(s).gamma_est;
 gamma_lower_bi = drt_output(2).scenario(s).gamma_lower;
 gamma_upper_bi = drt_output(2).scenario(s).gamma_upper;
 
-fill([theta_est_bi; flipud(theta_est_bi)], ...
+% -- Fill area for Uncertainty
+h_fill_bi = fill([theta_est_bi; flipud(theta_est_bi)], ...
      [gamma_lower_bi; flipud(gamma_upper_bi)], ...
-     color_scenario1, 'FaceAlpha',fillAlpha, 'EdgeColor','none',...
-     'HandleVisibility','off');
+     color_scenario1, ...
+     'FaceAlpha',fillAlpha, ...
+     'EdgeColor','none', ...
+     'DisplayName','Unc.');
 hold on;
 
 h_est_bi = plot(theta_est_bi, gamma_est_bi, ...
@@ -169,7 +175,8 @@ ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax2,'XColor','k','YColor','k','Box','on');
 hold off;
 
-lgdB = legend([h_est_bi, h_true_bi],...
+% -- Legend includes the fill handle
+lgdB = legend([h_est_bi, h_fill_bi, h_true_bi], ...
     'Location','none','FontSize',legendFontSize);
 lgdB.Position      = legendPosB;
 lgdB.Box           = 'off';
@@ -209,6 +216,7 @@ h_biV  = plot(time_1, volt_bi, ...
     'DisplayName','Bimodal Voltage');
 ylabel('Voltage (V)','FontSize',axisFontSize);
 set(ax3,'YColor','k');  % 오른축 검정
+
 % --- 오른쪽 축 라벨 위치 오프셋 ---
 posRightLabel = get(ax3.YAxis(2).Label,'Position');
 posRightLabel(1) = posRightLabel(1) + voltageLabelOffsetX;
@@ -243,12 +251,11 @@ annotation('textbox',[posC(1)+annOffsetX, posC(2)+posC(4)+annOffsetY, 0.03, 0.03
     'EdgeColor','none','Color','k');
 
 %% ================== (Optional) Figure 저장 =====================
-% 1) 최신버전(R2020a+): 
+% 1) 최신버전(R2020a+):
 exportgraphics(gcf, 'Figure_DRTPLOT.png','Resolution',300);
 % 
-% 2) 구버전:
+% 2) 구버전 사용 시 예시:
 %    set(gcf,'PaperPositionMode','auto');
 %    print(gcf,'-dpng','Figure_DRTPLOT.png','-r300');
-%
 
 

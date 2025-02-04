@@ -2,12 +2,12 @@
 clc; clear; close all;
 
 % ----- 공통 스타일 파라미터 -----
-lineWidthValue     = 1.5;  % 선 굵기
+lineWidthValue     = 1;  % 선 굵기
 fillAlpha          = 0.3;  % 불확도 영역 투명도
 axisFontSize       = 8;    % x, y축 라벨 및 tick 폰트 크기
 legendFontSize     = 6;    % 범례 폰트 크기
 annotationFontSize = 9;    % (a), (b), (c) 라벨 폰트 크기
-legendTokenSize    = 4;    % 범례 아이콘(박스/선) 길이
+legendTokenSize    = 3;    % 범례 아이콘(박스/선) 길이
 
 % ----- Subplot Labels 및 위치 설정 -----
 subplotLabels = {'(a)','(b)','(c)'}; 
@@ -25,9 +25,9 @@ topMargin    = 0.08;
 bottomMargin = 0.15;
 midGap       = 0.07;  
 
-legendPosA = [0.25, 0.77, 0.10, 0.10];
-legendPosB = [0.54, 0.77, 0.10, 0.10];
-legendPosC = [0.84, 0.77, 0.10, 0.10];
+legendPosA = [0.25, 0.70, 0.10, 0.10];
+legendPosB = [0.54, 0.70, 0.10, 0.10];
+legendPosC = [0.84, 0.70, 0.10, 0.10];
 
 % ----- 색상 팔레트 정의 -----
 p_colors = [
@@ -104,7 +104,7 @@ for i = 1:numScenarios
     end
     selData = AS_data(matchIdx);
 
-    % (5-2) 타입별 추정치 및 불확도 구간 플롯
+    % (5-2) 타입별 추정치 및 불확도(불확실성) 구간을 각각 플롯
     for d = 1:numel(selData)
         tname       = selData(d).type;
         cidx        = find(strcmp(typeGroup, tname));  % 색깔 인덱스
@@ -113,15 +113,15 @@ for i = 1:numScenarios
         gamma_lower = selData(d).gamma_lower;
         gamma_upper = selData(d).gamma_upper;
 
-        % 불확도 영역 (fill)
+        % ── (A) 불확도 영역 (Uncertainty)
         fill([theta_est; flipud(theta_est)], ...
              [gamma_lower; flipud(gamma_upper)], ...
              p_colors(cidx,:), ...
              'FaceAlpha', fillAlpha, ...
              'EdgeColor','none', ...
-             'HandleVisibility','off');
+             'DisplayName','Unc.');  % 범례에 "Unc."로 표시
 
-        % 추정 곡선 (legend 표시)
+        % ── (B) 추정 곡선
         plot(theta_est, gamma_est, ...
              'LineWidth', lineWidthValue, ...
              'Color', p_colors(cidx,:), ...
@@ -129,7 +129,6 @@ for i = 1:numScenarios
     end
 
     % (5-3) 참값 곡선 (Gamma_unimodal) 플롯
-    %      모든 subplot에서 동일한 참값을 그린다고 가정
     plot(theta_true, gamma_true, ...
          'k-', 'LineWidth', 1.8, ...
          'DisplayName', 'True'); 
