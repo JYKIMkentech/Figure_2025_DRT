@@ -79,8 +79,8 @@ R0 = 0.1;
 %% DRT and Uncertainty Estimation
 
 % True gamma values
-gamma_discrete_true = Gamma_data.gamma';  % Convert to column vector
-theta_true          = Gamma_data.theta';  % Convert to column vector
+gamma_discrete_true = Gamma_data.gamma'; 
+theta_true          = Gamma_data.theta';  
 
 % Variables to store DRT estimation results
 gamma_est_all      = cell(num_scenarios, 1);
@@ -113,11 +113,11 @@ for s = 1:num_scenarios
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
         DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0);
 
-    % Store results (note: gamma_est, gamma_est_all{s} as row vectors)
-    gamma_est_all{s}      = gamma_est';  % gamma_est is likely Nx1 -> make it 1xN
-    %V_est_all{s}         = V_est';     % If needed, keep
-    V_sd_all{s}           = V_sd';       % Just storing original measured data
-    theta_discrete_all{s} = theta_discrete;  % We'll handle dimension at plotting
+    % Store results 
+    gamma_est_all{s}      = gamma_est';  
+    %V_est_all{s}         = V_est';    
+    V_sd_all{s}           = V_sd';       
+    theta_discrete_all{s} = theta_discrete;  
 
     % Uncertainty estimation using bootstrap
     [gamma_lower, gamma_upper, gamma_resample_all] = ...
@@ -251,3 +251,27 @@ for s = 1:num_scenarios
     set(gca, 'FontSize', axisFontSize);
     ylim([0 inf]);
 end
+
+
+
+%% Find Indices where gamma_est is out of [gamma_lower, gamma_upper]
+
+% 시나리오별 인덱스를 저장할 셀 배열 (또는 구조체 등으로도 가능)
+outOfBoundsIndices = cell(num_scenarios, 1);
+
+for s = 1:num_scenarios
+    % 추정값 및 불확실성 구간 불러오기
+    gamma_est_vec   = gamma_est_all{s};    % 추정값
+    gamma_lower_vec = gamma_lower_all{s};  % 하한
+    gamma_upper_vec = gamma_upper_all{s};  % 상한
+    gamma_est_vec   = gamma_est_vec(:);
+    gamma_lower_vec = gamma_lower_vec(:);
+    gamma_upper_vec = gamma_upper_vec(:);
+
+    % 불확실성 범위를 벗어나는 인덱스 찾기
+    out_of_bounds_idx = find(gamma_est_vec < gamma_lower_vec | gamma_est_vec > gamma_upper_vec);
+    outOfBoundsIndices{s} = out_of_bounds_idx;
+
+end
+
+

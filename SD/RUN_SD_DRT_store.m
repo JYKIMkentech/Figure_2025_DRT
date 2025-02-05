@@ -87,7 +87,7 @@ for s = 1:num_scenarios
     dt     = scenario_data.dt;
     dur    = scenario_data.dur;
     n      = scenario_data.n;
-    lambda = 10;%scenario_data.Lambda_hat;
+    lambda = scenario_data.Lambda_hat;
 
     % (a) DRT_estimation
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
@@ -151,7 +151,7 @@ for s = 1:num_scenarios
     plot(th_s, gu_s, '--', 'Color', plotColor, 'LineWidth', 1);
 
     % (3) 중앙 추정값(진한 선)
-    %plot(th_s, ge_s, 'LineWidth',0.2, 'Color',plotColor);
+    plot(th_s, ge_s, 'LineWidth',0.2, 'Color',plotColor);
 
     % (4) True gamma (검정 실선)
     plot(theta_true, gamma_discrete_true, 'k-','LineWidth',1.5);
