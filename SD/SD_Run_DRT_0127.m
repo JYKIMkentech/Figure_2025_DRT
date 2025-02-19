@@ -4,7 +4,8 @@ clc; clear; close all;
 %% (1) Description
 % - AS1_1per_new(UNIMODAL), AS2_1per_new(BIMODAL) 두 가지 데이터에 대해,
 %   type='A' 인 시나리오만 골라서 DRT를 추정하고, 
-%   불확실성(bootstrap)도 계산한 뒤, 결과를 구조체 배열로 저장하는 코드
+%   불확실성(bootstrap)도 계산한 뒤, 결과를 구조체 배열로 저장하는 코드.
+% - 추가: bootstrap으로부터 gamma_avg를 계산하여 drt_output에 필드 추가.
 
 %% (2) Graphic Parameters (필요 시)
 axisFontSize   = 14;
@@ -20,7 +21,8 @@ for file = mat_files'
     load(fullfile(file_path, file.name));
 end
 
-% 위에서 'AS1_1per_new', 'AS2_1per_new', 'Gamma_unimodal', 'Gamma_bimodal' 등이 로드되었다고 가정
+% 위에서 'AS1_1per_new', 'AS2_1per_new', 'Gamma_unimodal', 'Gamma_bimodal' 등이 
+% 로드되었다고 가정
 
 %% (4) 우리는 오직 2개 데이터셋만 처리: {AS1_1per_new, AS2_1per_new}
 %    UNIMODAL --> AS1_1per_new / BIMODAL --> AS2_1per_new
@@ -32,8 +34,8 @@ Gamma_list     = {Gamma_unimodal, Gamma_bimodal};
 selected_type  = 'A';  
 
 %% (5) DRT 계산에 필요한 고정 파라미터
-OCV = 0;        % 예시
-R0  = 0.1;      % 예시
+OCV = 0;              % 예시
+R0  = 0.1;            % 예시
 num_resamples = 100;  % 부트스트랩 횟수
 
 %% (6) 결과 저장용 구조체 배열(drt_output)을 초기화
@@ -59,11 +61,11 @@ for k = 1:2
             AS_name, selected_type, num_scenari);
 
     % drt_output(k) 최상위 필드 저장
-    drt_output(k).AS_name       = AS_name;
-    drt_output(k).type          = selected_type;
-    drt_output(k).gamma_true    = gamma_discrete_true;
-    drt_output(k).theta_true    = theta_true;
-    drt_output(k).scenario      = [];  % 아래에서 scenario별로 채움
+    drt_output(k).AS_name    = AS_name;
+    drt_output(k).type       = selected_type;
+    drt_output(k).gamma_true = gamma_discrete_true;
+    drt_output(k).theta_true = theta_true;
+    drt_output(k).scenario   = [];  % 아래에서 scenario별로 채움
 
     % --- (c) 시나리오별로 DRT 추정 ---
     for s = 1:num_scenari
@@ -88,7 +90,10 @@ for k = 1:2
         [gamma_lower, gamma_upper, gamma_resample_all] = ...
             bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples);
 
-        % (3) 결과 저장
+        % (2') 부트스트랩 평균 gamma
+        gamma_avg = mean(gamma_resample_all, 1);  % (크기: 1 x n)
+
+        % (3) 결과 저장 (각 scenario에 필드 추가)
         drt_output(k).scenario(s).SN              = scenario_data.SN;
         drt_output(k).scenario(s).t               = t;
         drt_output(k).scenario(s).I               = ik;
@@ -98,6 +103,7 @@ for k = 1:2
         drt_output(k).scenario(s).gamma_lower     = gamma_lower(:);
         drt_output(k).scenario(s).gamma_upper     = gamma_upper(:);
         drt_output(k).scenario(s).gamma_resamples = gamma_resample_all;
+        drt_output(k).scenario(s).gamma_avg       = gamma_avg(:);  % ★ 추가
         drt_output(k).scenario(s).lambda          = lambda;
         drt_output(k).scenario(s).dur             = dur;
         drt_output(k).scenario(s).n               = n;

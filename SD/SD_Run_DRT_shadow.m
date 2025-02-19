@@ -4,14 +4,15 @@ clc; clear; close all;
 % This script performs DRT estimation with uncertainty analysis using bootstrap.
 % It loads the data, allows the user to select a dataset and type, and then
 % performs the DRT estimation and uncertainty analysis for each scenario 
-% within the selected data. The estimated gamma values are plotted with 
-% uncertainty bounds and compared with the true gamma.
+% within the selected data. 
+% The 5%-95% confidence interval is shown as a shaded region, 
+% and the line in the middle is the bootstrap-average gamma.
 
 %% Graphic Parameters
-axisFontSize = 14;
-titleFontSize = 12;
+axisFontSize   = 14;
+titleFontSize  = 12;
 legendFontSize = 12;
-labelFontSize = 12;
+labelFontSize  = 12;
 
 %% Load Data
 
@@ -27,8 +28,8 @@ end
 %% Parameters
 
 % List of datasets and their names
-AS_structs = {AS1_1per_new, AS1_2per_new, AS2_1per_new, AS2_2per_new};
-AS_names   = {'AS1_1per_new', 'AS1_2per_new', 'AS2_1per_new', 'AS2_2per_new'};
+AS_structs    = {AS1_1per_new, AS1_2per_new, AS2_1per_new, AS2_2per_new};
+AS_names      = {'AS1_1per_new', 'AS1_2per_new', 'AS2_1per_new', 'AS2_2per_new'};
 Gamma_structs = {Gamma_unimodal, Gamma_unimodal, Gamma_bimodal, Gamma_bimodal};
 
 % Select the dataset to process
@@ -41,7 +42,7 @@ dataset_idx = input('Select a dataset to process (enter the number): ');
 % Set the selected dataset
 AS_data   = AS_structs{dataset_idx};
 AS_name   = AS_names{dataset_idx};
-Gamma_data = Gamma_structs{dataset_idx};
+Gamma_data= Gamma_structs{dataset_idx};
 
 % Extract the list of available types from the selected dataset
 types = unique({AS_data.type});
@@ -51,7 +52,7 @@ disp('Select a type:');
 for i = 1:length(types)
     fprintf('%d. %s\n', i, types{i});
 end
-type_idx = input('Enter the type number: ');
+type_idx      = input('Enter the type number: ');
 selected_type = types{type_idx};
 
 % Extract data for the selected type
@@ -74,102 +75,100 @@ c_mat = lines(num_scenarios);
 
 % Set OCV and R0 (modify if necessary)
 OCV = 0;
-R0 = 0.1;
+R0  = 0.1;
 
 %% DRT and Uncertainty Estimation
 
 % True gamma values
-gamma_discrete_true = Gamma_data.gamma'; 
+gamma_discrete_true = Gamma_data.gamma';  
 theta_true          = Gamma_data.theta';  
 
 % Variables to store DRT estimation results
 gamma_est_all      = cell(num_scenarios, 1);
-V_est_all          = cell(num_scenarios, 1);
 V_sd_all           = cell(num_scenarios, 1);
 theta_discrete_all = cell(num_scenarios, 1);
-gamma_lower_all    = cell(num_scenarios, 1);
-gamma_upper_all    = cell(num_scenarios, 1);
 
 % Variables to store uncertainty estimation results
 num_resamples = 100;  % Number of bootstrap resamples
+gamma_lower_all    = cell(num_scenarios, 1);
+gamma_upper_all    = cell(num_scenarios, 1);
+gamma_avg_all      = cell(num_scenarios, 1);   % ★ 부트스트랩 평균
 gamma_resample_all_scenarios = cell(num_scenarios, 1);
 
 % Loop over scenarios
 for s = 1:num_scenarios
-    fprintf('Processing %s Type %s Scenario %d/%d...\n', AS_name, ...
-            selected_type, s, num_scenarios);
+    fprintf('Processing %s Type %s Scenario %d/%d...\n', ...
+            AS_name, selected_type, s, num_scenarios);
 
     % Get data for the current scenario
     scenario_data = type_data(s);
-    V_sd   = scenario_data.V(:);          % Measured voltage (column vector)
-    ik     = scenario_data.I(:);          % Current (column vector)
-    t      = scenario_data.t(:);          % Time vector
-    dt     = scenario_data.dt;           % dt value
-    dur    = scenario_data.dur;          % Duration value
-    n      = scenario_data.n;            % Number of RC elements
-    lambda = scenario_data.Lambda_hat;   % Regularization parameter 
+    V_sd   = scenario_data.V(:);  % Measured voltage
+    ik     = scenario_data.I(:);  % Current
+    t      = scenario_data.t(:);  % Time vector
+    dt     = scenario_data.dt;    % dt value
+    dur    = scenario_data.dur;   % Duration value
+    n      = scenario_data.n;     % Number of RC elements
+    lambda = scenario_data.Lambda_hat; % Regularization parameter
 
-    % DRT estimation
+    % (1) DRT estimation (single pass)
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
         DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0);
 
-    % Store results 
-    gamma_est_all{s}      = gamma_est';  
-    %V_est_all{s}         = V_est';    
-    V_sd_all{s}           = V_sd';       
-    theta_discrete_all{s} = theta_discrete;  
+    % Store main DRT results
+    gamma_est_all{s}      = gamma_est';
+    V_sd_all{s}           = V_sd';
+    theta_discrete_all{s} = theta_discrete;
 
-    % Uncertainty estimation using bootstrap
+    % (2) Bootstrap uncertainty
     [gamma_lower, gamma_upper, gamma_resample_all] = ...
         bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples);
 
-    % Store uncertainty results (note: also row vectors for consistency)
-    gamma_lower_all{s} = gamma_lower;  % check if your function returns row or col
+    gamma_lower_all{s} = gamma_lower;
     gamma_upper_all{s} = gamma_upper;
     gamma_resample_all_scenarios{s} = gamma_resample_all;
+
+    % ★ 부트스트랩 평균
+    gamma_avg = mean(gamma_resample_all, 1);
+    gamma_avg_all{s} = gamma_avg;
 end
 
 %% Plot Results
+theta_true_row = theta_true(:).';
+gamma_true_row = gamma_discrete_true(:).';
+
 % -------------------------------------------------------------------------
-% (1) Plot all scenarios together (shaded region + line)
+% (1) Plot all scenarios together (shaded region + line = avg gamma)
 figure('Name', [AS_name, ' Type ', selected_type, ': DRT Comparison (All)'], ...
        'NumberTitle', 'off');
 hold on;
 for s = 1:num_scenarios
-    theta_s   = theta_discrete_all{s}(:).';        
-    gamma_est = gamma_est_all{s}(:).';             
-    gamma_l   = gamma_lower_all{s}(:).';           
-    gamma_u   = gamma_upper_all{s}(:).';          
+    theta_s   = theta_discrete_all{s}(:).';  
+    gamma_l   = gamma_lower_all{s}(:).';     
+    gamma_u   = gamma_upper_all{s}(:).';     
+    gamma_avg = gamma_avg_all{s}(:).';       % ★ 부트스트랩 평균 (라인)
     plotColor = c_mat(s, :);
 
-    a = theta_s;
-    b = fliplr(theta_s);
-    c = [theta_s, fliplr(theta_s)];
-    d = gamma_u;
-    e = fliplr(gamma_u);
-    f = gamma_l;
-    g = [gamma_l, fliplr(gamma_u)];
-
-    % Shaded region 
+    % Shaded region (5~95%)
     fill([theta_s, fliplr(theta_s)], ...
          [gamma_l, fliplr(gamma_u)], ...
-         plotColor, 'FaceAlpha', 1, 'EdgeColor', 'none');
+         plotColor, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
 
-    % Estimated gamma (solid line)
-    plot(theta_s, gamma_est, 'LineWidth', 1.5, 'Color', plotColor, ...
+    % Line: bootstrap 평균
+    plot(theta_s, gamma_avg, 'LineWidth', 1.5, 'Color', plotColor, ...
          'DisplayName', ['Scenario ', num2str(SN_list(s))]);
+
+    % (Optional) If you want to see the original single-pass DRT estimate:
+    % plot(theta_s, gamma_est_all{s}, '--', 'LineWidth', 1.0, ...
+    %      'Color', plotColor);
 end
 
-% --- Plot the true gamma as a reference ---
-theta_true_row = theta_true(:).';
-gamma_true_row = gamma_discrete_true(:).';
+% Plot the true gamma as a reference
 plot(theta_true_row, gamma_true_row, 'k-', 'LineWidth', 2, ...
      'DisplayName', 'True \gamma');
-
 hold off;
 xlabel('\theta = ln(\tau [s])', 'FontSize', labelFontSize);
 ylabel('\gamma',                'FontSize', labelFontSize);
-title([AS_name, ' Type ', selected_type, ': Estimated \gamma (All Scenarios)'], ...
+title([AS_name, ' Type ', selected_type, ': Avg \gamma with 5%-95% CI (All)'], ...
       'FontSize', titleFontSize);
 set(gca, 'FontSize', axisFontSize);
 legend('Location', 'Best', 'FontSize', legendFontSize);
@@ -187,31 +186,32 @@ hold on;
 for idx_s = 1:length(selected_scenarios)
     s = find(SN_list == selected_scenarios(idx_s), 1);
     if ~isempty(s)
-        % Prepare data
         theta_s   = theta_discrete_all{s}(:).';  
-        gamma_est = gamma_est_all{s}(:).';      
-        gamma_l   = gamma_lower_all{s}(:).';    
-        gamma_u   = gamma_upper_all{s}(:).';    
+        gamma_l   = gamma_lower_all{s}(:).';
+        gamma_u   = gamma_upper_all{s}(:).';
+        gamma_avg = gamma_avg_all{s}(:).';
         plotColor = c_mat(s, :);
 
         fill([theta_s, fliplr(theta_s)], ...
              [gamma_l, fliplr(gamma_u)], ...
              plotColor, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
 
-        plot(theta_s, gamma_est, 'LineWidth', 1.5, 'Color', plotColor, ...
+        plot(theta_s, gamma_avg, 'LineWidth', 1.5, 'Color', plotColor, ...
              'DisplayName', ['Scenario ', num2str(SN_list(s))]);
+
+        % (Optional) single-pass estimate
+        % plot(theta_s, gamma_est_all{s}, '--', 'Color', plotColor);
     else
         warning('Scenario %d not found in the data', selected_scenarios(idx_s));
     end
 end
 
-% Plot true gamma
 plot(theta_true_row, gamma_true_row, 'k-', 'LineWidth', 2, ...
      'DisplayName', 'True \gamma');
 hold off;
 xlabel('\theta = ln(\tau [s])', 'FontSize', labelFontSize);
 ylabel('\gamma', 'FontSize', labelFontSize);
-title([AS_name, ' Type ', selected_type, ': Selected Scenarios'], ...
+title([AS_name, ' Type ', selected_type, ': Selected Scenarios (Avg & CI)'], ...
       'FontSize', titleFontSize);
 set(gca, 'FontSize', axisFontSize);
 legend('Location', 'Best', 'FontSize', legendFontSize);
@@ -226,21 +226,21 @@ num_rows = ceil(num_scenarios / num_cols);
 
 for s = 1:num_scenarios
     subplot(num_rows, num_cols, s);
-
-    % Prepare data
     theta_s   = theta_discrete_all{s}(:).';  
-    gamma_est = gamma_est_all{s}(:).';      
-    gamma_l   = gamma_lower_all{s}(:).';    
-    gamma_u   = gamma_upper_all{s}(:).';    
+    gamma_l   = gamma_lower_all{s}(:).';
+    gamma_u   = gamma_upper_all{s}(:).';
+    gamma_avg = gamma_avg_all{s}(:).';
     plotColor = c_mat(s, :);
 
-    % Shaded region
+    % Shaded region (5~95%)
     fill([theta_s, fliplr(theta_s)], ...
          [gamma_l, fliplr(gamma_u)], ...
          plotColor, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
     hold on;
-    % Solid line (estimated)
-    plot(theta_s, gamma_est, 'LineWidth', 1.0, 'Color', plotColor);
+
+    % Solid line: bootstrap 평균
+    plot(theta_s, gamma_avg, 'LineWidth', 1.0, 'Color', plotColor);
+
     % True gamma
     plot(theta_true_row, gamma_true_row, 'k-', 'LineWidth', 1.5);
     hold off;
@@ -252,26 +252,18 @@ for s = 1:num_scenarios
     ylim([0 inf]);
 end
 
-
-
-%% Find Indices where gamma_est is out of [gamma_lower, gamma_upper]
-
-% 시나리오별 인덱스를 저장할 셀 배열 (또는 구조체 등으로도 가능)
+%% (Optional) Find Indices where gamma_est is out of [gamma_lower, gamma_upper]
+% 만약 single-pass DRT 추정치(gamma_est)가 신뢰구간을 벗어나는지를 확인하고자 한다면:
 outOfBoundsIndices = cell(num_scenarios, 1);
-
 for s = 1:num_scenarios
-    % 추정값 및 불확실성 구간 불러오기
-    gamma_est_vec   = gamma_est_all{s};    % 추정값
-    gamma_lower_vec = gamma_lower_all{s};  % 하한
-    gamma_upper_vec = gamma_upper_all{s};  % 상한
-    gamma_est_vec   = gamma_est_vec(:);
-    gamma_lower_vec = gamma_lower_vec(:);
-    gamma_upper_vec = gamma_upper_vec(:);
+    gamma_est_vec   = gamma_est_all{s};   % single-pass estimate
+    gamma_lower_vec = gamma_lower_all{s};
+    gamma_upper_vec = gamma_upper_all{s};
 
-    % 불확실성 범위를 벗어나는 인덱스 찾기
     out_of_bounds_idx = find(gamma_est_vec < gamma_lower_vec | gamma_est_vec > gamma_upper_vec);
     outOfBoundsIndices{s} = out_of_bounds_idx;
-
 end
+
+
 
 

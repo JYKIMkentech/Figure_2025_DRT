@@ -4,9 +4,11 @@ clc; clear; close all;
 %% (A) Description
 % - 기존 DRT 추정 + 구조체 업데이트
 % - 모든 시나리오(최대 10개 가정)를 2x5 subplot에 표시
-% - switch 함수 대신 eval()로 원본 변수(AS1_1per_new 등)에 대입 + save
-% - 마지막에 gamma_est ~ (gamma_lower, gamma_upper) 범위 확인
-% - (추가) subplot에서 fill()를 이용해 불확실성 영역에 음영+투명도+경계선 표시
+% - eval()을 통해 원본 변수(AS1_1per_new 등)에 대입 + save
+% - 마지막에 gamma_est ~ [gamma_lower, gamma_upper] 범위 확인
+% - (수정) fill()를 이용해 불확실성 영역(5~95%)에 음영 표시, 
+%          중앙선은 부트스트랩 평균(gamma_avg)로 함
+% - (추가) 테두리 없애기('EdgeColor','none'), gamma_avg를 구조체에 저장
 
 %% (B) Graphic Parameters
 axisFontSize   = 14;
@@ -22,8 +24,8 @@ for file = mat_files'
 end
 
 %% (2) Prepare references
-AS_structs = {AS1_1per_new, AS1_2per_new, AS2_1per_new, AS2_2per_new};
-AS_names   = {'AS1_1per_new','AS1_2per_new','AS2_1per_new','AS2_2per_new'};
+AS_structs    = {AS1_1per_new, AS1_2per_new, AS2_1per_new, AS2_2per_new};
+AS_names      = {'AS1_1per_new','AS1_2per_new','AS2_1per_new','AS2_2per_new'};
 Gamma_structs = {Gamma_unimodal, Gamma_unimodal, Gamma_bimodal, Gamma_bimodal};
 
 fprintf('Available datasets:\n');
@@ -41,7 +43,7 @@ disp('Select a type:');
 for i = 1:length(types)
     fprintf('%d. %s\n', i, types{i});
 end
-type_idx = input('Enter the type number: ');
+type_idx      = input('Enter the type number: ');
 selected_type = types{type_idx};
 
 type_indices = find(strcmp({AS_data.type}, selected_type));
@@ -63,8 +65,8 @@ OCV = 0;
 R0  = 0.1;
 
 %% (3) True gamma, theta
-gamma_discrete_true = Gamma_data.gamma(:).';
-theta_true          = Gamma_data.theta(:).';
+gamma_discrete_true = Gamma_data.gamma(:).';  % row vector
+theta_true          = Gamma_data.theta(:).';  
 
 %% (4) DRT Estimation & Uncertainty
 gamma_est_all      = cell(num_scenarios,1);
@@ -72,6 +74,7 @@ theta_discrete_all = cell(num_scenarios,1);
 gamma_lower_all    = cell(num_scenarios,1);
 gamma_upper_all    = cell(num_scenarios,1);
 gamma_resample_all = cell(num_scenarios,1);
+gamma_avg_all      = cell(num_scenarios,1);  % ★ 부트스트랩 평균 추가 저장
 
 num_resamples = 500;
 
@@ -89,19 +92,25 @@ for s = 1:num_scenarios
     n      = scenario_data.n;
     lambda = scenario_data.Lambda_hat;
 
-    % (a) DRT_estimation
+    %% (a) DRT_estimation (단일 추정)
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
         DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0);
 
-    % (b) bootstrap
+    %% (b) bootstrap (불확실성 추정)
+    %  여기서 [gamma_lower, gamma_upper, gamma_resamples] 리턴된다고 가정
     [gamma_lower, gamma_upper, gamma_resamples] = ...
         bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples);
 
+    % 부트스트랩 평균
+    gamma_avg = mean(gamma_resamples, 1);
+
+    %% 저장
     gamma_est_all{s}      = gamma_est(:);
     theta_discrete_all{s} = theta_discrete(:);
     gamma_lower_all{s}    = gamma_lower(:);
     gamma_upper_all{s}    = gamma_upper(:);
     gamma_resample_all{s} = gamma_resamples;
+    gamma_avg_all{s}      = gamma_avg(:);
 end
 
 %% (5) Store new fields into type_data
@@ -111,6 +120,8 @@ for s = 1:num_scenarios
     type_data(s).gamma_lower     = gamma_lower_all{s};
     type_data(s).gamma_upper     = gamma_upper_all{s};
     type_data(s).gamma_resamples = gamma_resample_all{s};
+    % ★ 추가: 부트스트랩 평균 gamma
+    type_data(s).gamma_avg       = gamma_avg_all{s};
 end
 
 %% (6) Reflect back to AS_data
@@ -120,6 +131,8 @@ for k = 1:num_scenarios
     AS_data(type_indices(k)).gamma_lower     = type_data(k).gamma_lower;
     AS_data(type_indices(k)).gamma_upper     = type_data(k).gamma_upper;
     AS_data(type_indices(k)).gamma_resamples = type_data(k).gamma_resamples;
+    % ★ 평균도 저장
+    AS_data(type_indices(k)).gamma_avg       = type_data(k).gamma_avg;
 end
 
 %% (7) Plot in Subplot(2 x 5) with Shaded Uncertainty
@@ -133,45 +146,40 @@ for s = 1:num_scenarios
     subplot(num_rows, num_cols, s);
 
     th_s = theta_discrete_all{s}(:).';
-    ge_s = gamma_est_all{s}(:).';
     gl_s = gamma_lower_all{s}(:).';
     gu_s = gamma_upper_all{s}(:).';
-    plotColor = c_mat(s,:);  % 시나리오별 색상
+    ga_s = gamma_avg_all{s}(:).';      % ★ 중앙선 = 부트스트랩 평균
+    plotColor = c_mat(s,:);           % 시나리오별 색상
 
-    % (1) 불확실성 영역 (음영 + 투명도)
+    % (1) 불확실성 영역 (음영 + 투명도) -> 테두리 X
     fill([th_s, fliplr(th_s)], ...
          [gl_s, fliplr(gu_s)], ...
          plotColor, ...
-         'FaceAlpha', 0.3, ...        % 투명도
-         'EdgeColor', 'none');       % 테두리 없음
+         'FaceAlpha', 0.3, ...
+         'EdgeColor', 'none');  % 테두리 없음
     hold on;
 
-    % (2) 상하 경계선(점선) - 옵션
-    plot(th_s, gl_s, '--', 'Color', plotColor, 'LineWidth', 1);
-    plot(th_s, gu_s, '--', 'Color', plotColor, 'LineWidth', 1);
+    % (2) 중앙선: 부트스트랩 평균
+    plot(th_s, ga_s, 'LineWidth', 1.5, 'Color', plotColor);
 
-    % (3) 중앙 추정값(진한 선)
-    plot(th_s, ge_s, 'LineWidth',0.2, 'Color',plotColor);
-
-    % (4) True gamma (검정 실선)
+    % (3) True gamma (검정 실선)
     plot(theta_true, gamma_discrete_true, 'k-','LineWidth',1.5);
 
     xlabel('\theta (ln(\tau))','FontSize',labelFontSize);
     ylabel('\gamma','FontSize',labelFontSize);
     title(['SN=', num2str(SN_list(s))], 'FontSize', titleFontSize);
     set(gca,'FontSize',axisFontSize);
-    % ylim([0 inf]);  % <- 이거 해제하면 작은 값도 좀 더 보일 수 있음
     hold off;
 end
 
 %% (8) Check gamma_est within [gamma_lower, gamma_upper]
 fprintf('\n=== Check gamma_est within [gamma_lower, gamma_upper] ===\n');
 for s = 1:num_scenarios
-    ge_s = gamma_est_all{s};
+    ga_s = gamma_est_all{s};  % DRT_estimation 결과
     gl_s = gamma_lower_all{s};
     gu_s = gamma_upper_all{s};
 
-    inBounds = (ge_s >= gl_s) & (ge_s <= gu_s);
+    inBounds = (ga_s >= gl_s) & (ga_s <= gu_s);
     if all(inBounds)
         fprintf('Scenario %d (SN=%d): all gamma_est in bounds.\n', s, SN_list(s));
     else
@@ -192,6 +200,5 @@ eval([AS_name, ' = AS_data;']);
 eval(['save(''', save_path,''',''',AS_name,''',''-v7.3'');']);
 
 fprintf('\n[INFO] Saved to %s\n', save_path);
-
 
 
