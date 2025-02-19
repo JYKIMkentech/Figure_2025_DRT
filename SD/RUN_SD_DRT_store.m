@@ -90,7 +90,7 @@ for s = 1:num_scenarios
     dt     = scenario_data.dt;
     dur    = scenario_data.dur;
     n      = scenario_data.n;
-    lambda = scenario_data.Lambda_hat;
+    lambda = scenario_data.Lambda_hat; % D,E,F는 lambda = 10
 
     %% (a) DRT_estimation (단일 추정)
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
