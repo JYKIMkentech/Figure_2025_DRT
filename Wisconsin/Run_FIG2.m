@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Run_FIG2.m - Example code with (d) marker+line style & parula in (e)
+% Run_FIG2_modified.m - (b)는 Parula 첫 번째 색상, (a)는 범례 상하공백 축소
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clc; clear; close all;
@@ -22,7 +22,7 @@ lineWidthEst  = 1;
 lineWidthCurr = 1;
 lineWidthSOC  = 1;
 
-% [C] 색상 팔레트(기본)w
+% [C] 색상 팔레트(기본)
 p_colors = [
     0.00000, 0.45098, 0.76078;  % #1 (Blue)
     0.93725, 0.75294, 0.00000;  % #2 (Yellow)
@@ -57,15 +57,16 @@ R0_xOffset = 0.1;
 R0_yOffset = 0.2;   
 
 % [F] Legend 'Position' 설정
-legendPosA = [0.23 0.58 0.10 0.15];
-legendPosB = [0.40 0.75 0.10 0.10];
-legendPosC = [0.69 0.59 0.10 0.15];
-legendPosD = [0.11 0.13 0.10 0.15];
-legendPosE = [0.52 0.59 0.10 0.15];
-legendPosF = [0.69 0.14 0.10 0.15];
+% (a) 부분 범례 위치/크기를 살짝 조정하여 상하공백 축소
+legendPosA = [0.23 0.59 0.05 0.10]; % <-- 높이 0.10으로 변경 (기존 0.15)
+legendPosB = [0.40 0.75 0.05 0.10];
+legendPosC = [0.72 0.59 0.05 0.15];
+legendPosD = [0.13 0.13 0.05 0.15];
+legendPosE = [0.52 0.59 0.05 0.15];
+legendPosF = [0.72 0.14 0.05 0.15];
 
-% [G] Legend 선 길이 (ItemTokenSize)
-legendItemTokenSize = [2, 3];
+% [G] Legend 선 길이 (ItemTokenSize) - 범례 내부 간격
+legendItemTokenSize = [2, 2];  % <-- [2, 2]로 축소 (기존 [2,3])
 
 %% ========== (1) Figure 생성 ==========
 figure('Units','centimeters','Position',[3 3 figWidth figHeight]);
@@ -86,8 +87,7 @@ pos(4,:) = [leftMargin,                       row2_y, subplotWidth, subplotHeigh
 pos(5,:) = [leftMargin+1*(subplotWidth+gapX), row2_y, subplotWidth, subplotHeight];
 pos(6,:) = [leftMargin+2*(subplotWidth+gapX), row2_y, subplotWidth, subplotHeight];
 
-%% (2) 예시 데이터 불러오기
-% 실제 환경에 맞게 경로 수정하세요
+%% (2) 예시 데이터 불러오기 (사용자 환경에 맞게 경로 수정 필요)
 load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat',...
      'udds_data_soc_results');
 num_trips = length(udds_data_soc_results);
@@ -120,8 +120,10 @@ yyaxis left;  set(gca, 'YColor','k','XColor','k','FontSize',axisTickFontSize);
 yyaxis right; set(gca, 'YColor','k','XColor','k','FontSize',axisTickFontSize);
 
 leg_a = legend([p1 p2 p3]);
-set(leg_a, 'Position', legendPosA, 'FontSize', legendFontSize, ...
-           'Box','off', 'ItemTokenSize', [2,3]); % 범례 항목 간 간격 줄이기
+set(leg_a, 'Position', legendPosA, ...
+           'FontSize', legendFontSize, ...
+           'Box','off', ...
+           'ItemTokenSize', legendItemTokenSize); 
 
 annotation('textbox', ...
    [pos(1,1)+annotationOffsetX, pos(1,2)+pos(1,4)*annotationOffsetY, ...
@@ -130,15 +132,18 @@ annotation('textbox', ...
    'FontWeight','bold','LineStyle','none');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% (b) Trip 1 DRT
+%% (b) Trip 1 DRT (색상 Parula 첫 번째로 지정)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot('Position', pos(2,:));
 theta_1 = udds_data_soc_results(trip_idx).theta_discrete;
 gamma_1 = udds_data_soc_results(trip_idx).gamma_est;
 R0_1    = udds_data_soc_results(trip_idx).R0_est;
 
+% Parula 팔레트에서 첫 번째 색상 추출
+cmap_b = parula(64);
 plot(theta_1, gamma_1, 'LineWidth', lineWidthMeas, ...
-    'Color', p_colors(8,:), 'LineStyle','-');
+    'Color', cmap_b(1,:), ...  % Parula 첫 번째 색상
+    'LineStyle','-');
 hold on;
 xlabel('\theta = ln(\tau [s])', 'FontSize', axisLabelFontSize);
 ylabel('\gamma [\Omega]',       'FontSize', axisLabelFontSize);
@@ -181,8 +186,10 @@ xlabel('Time [s]', 'FontSize', axisLabelFontSize);
 ylabel('SOC',      'FontSize', axisLabelFontSize);
 
 leg_c = legend([p1c p2c p3c p4c]);
-set(leg_c, 'Position', legendPosC, 'FontSize', legendFontSize,...
-           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+set(leg_c, 'Position', legendPosC, ...
+           'FontSize', legendFontSize,...
+           'Box','off', ...
+           'ItemTokenSize', legendItemTokenSize);
 
 set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
 
@@ -212,7 +219,7 @@ p1d = plot(full_t, full_V, ...
     'LineWidth', 1.2, ...
     'LineStyle','-', ...
     'Marker','o','MarkerSize',3, ...
-    'MarkerIndices', 1:500:length(full_t), ... % 마커 간격 조절
+    'MarkerIndices', 1:500:length(full_t), ... % 마커 간격
     'DisplayName','Meas. V');
 hold on;
 
@@ -228,8 +235,10 @@ xlabel('Time [s]',    'FontSize', axisLabelFontSize);
 set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
 
 leg_d = legend([p1d p2d]);
-set(leg_d, 'Position', legendPosD, 'FontSize', legendFontSize,...
-           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+set(leg_d, 'Position', legendPosD, ...
+           'FontSize', legendFontSize,...
+           'Box','off', ...
+           'ItemTokenSize', legendItemTokenSize);
 
 annotation('textbox', ...
    [pos(4,1)+annotationOffsetX, pos(4,2)+pos(4,4)*annotationOffsetY, ...
@@ -267,7 +276,8 @@ xlabel('SOC', 'FontSize', axisLabelFontSize);
 ylabel('\theta = ln(\tau [s])', 'FontSize', axisLabelFontSize);
 zlabel('\gamma [\Omega]',       'FontSize', axisLabelFontSize);
 view(135, 30);
-set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k','ZColor','k');
+set(gca, 'FontSize', axisTickFontSize, ...
+         'YColor','k','XColor','k','ZColor','k');
 
 annotation('textbox', ...
    [pos(5,1)+annotationOffsetX, pos(5,2)+pos(5,4)*annotationOffsetY, ...
@@ -307,8 +317,10 @@ ylabel('SOC',      'FontSize', axisLabelFontSize);
 xtickformat('%.0f');
 
 leg_f = legend([p1f p2f p3f p4f]);
-set(leg_f, 'Position', legendPosF, 'FontSize', legendFontSize,...
-           'Box','off', 'ItemTokenSize', legendItemTokenSize);
+set(leg_f, 'Position', legendPosF, ...
+           'FontSize', legendFontSize,...
+           'Box','off', ...
+           'ItemTokenSize', legendItemTokenSize);
 
 set(gca, 'FontSize', axisTickFontSize, 'YColor','k','XColor','k');
 
