@@ -6,9 +6,11 @@ clc; clear; close all;
 % - 모든 시나리오(최대 10개 가정)를 2x5 subplot에 표시
 % - eval()을 통해 원본 변수(AS1_1per_new 등)에 대입 + save
 % - 마지막에 gamma_est ~ [gamma_lower, gamma_upper] 범위 확인
-% - (수정) fill()를 이용해 불확실성 영역(5~95%)에 음영 표시, 
+% - (수정) fill()를 이용해 불확실성 영역(5~95%)에 음영 표시,
 %          중앙선은 부트스트랩 평균(gamma_avg)로 함
 % - (추가) 테두리 없애기('EdgeColor','none'), gamma_avg를 구조체에 저장
+%
+% - (확장) 3%,4% 시나리오(AS1_3per_new, AS1_4per_new, AS2_3per_new, AS2_4per_new)도 추가
 
 %% (B) Graphic Parameters
 axisFontSize   = 14;
@@ -24,26 +26,45 @@ for file = mat_files'
 end
 
 %% (2) Prepare references
-AS_structs    = {AS1_1per_new, AS1_2per_new, AS2_1per_new, AS2_2per_new};
-AS_names      = {'AS1_1per_new','AS1_2per_new','AS2_1per_new','AS2_2per_new'};
-Gamma_structs = {Gamma_unimodal, Gamma_unimodal, Gamma_bimodal, Gamma_bimodal};
+% (3%, 4% 추가)
+% 앞의 4개는 Unimodal -> Gamma_unimodal
+% 뒤의 4개는 Bimodal -> Gamma_bimodal
+AS_structs = {
+    AS1_1per_new, AS1_2per_new, AS1_3per_new, AS1_4per_new, ...
+    AS2_1per_new, AS2_2per_new, AS2_3per_new, AS2_4per_new};
+
+AS_names = {
+    'AS1_1per_new','AS1_2per_new','AS1_3per_new','AS1_4per_new',...
+    'AS2_1per_new','AS2_2per_new','AS2_3per_new','AS2_4per_new'};
+
+Gamma_structs = {
+    Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, ... % AS1
+    Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal };   % AS2
 
 fprintf('Available datasets:\n');
 for idx = 1:length(AS_names)
     fprintf('%d: %s\n', idx, AS_names{idx});
 end
-dataset_idx = input('Select a dataset to process (enter the number): ');
+dataset_idx = input('Select a dataset to process (enter the number 1~8): ');
 
-AS_data    = AS_structs{dataset_idx}; 
-AS_name    = AS_names{dataset_idx};   
+if isempty(dataset_idx) || dataset_idx < 1 || dataset_idx > length(AS_names)
+    error('Invalid dataset index.');
+end
+
+AS_data    = AS_structs{dataset_idx};
+AS_name    = AS_names{dataset_idx};
 Gamma_data = Gamma_structs{dataset_idx};
 
+% type 고르기
 types = unique({AS_data.type});
 disp('Select a type:');
 for i = 1:length(types)
     fprintf('%d. %s\n', i, types{i});
 end
-type_idx      = input('Enter the type number: ');
+type_idx = input('Enter the type number: ');
+if isempty(type_idx) || type_idx < 1 || type_idx > length(types)
+    error('Invalid type index.');
+end
 selected_type = types{type_idx};
 
 type_indices = find(strcmp({AS_data.type}, selected_type));
@@ -54,8 +75,7 @@ SN_list = [type_data.SN];
 
 fprintf('\n[INFO] Selected dataset: %s\n', AS_name);
 fprintf('       Selected type: %s\n', selected_type);
-fprintf('Scenario numbers: ');
-disp(SN_list);
+fprintf('Scenario numbers: '); disp(SN_list);
 
 % 색상
 c_mat = lines(num_scenarios);
@@ -66,7 +86,7 @@ R0  = 0.1;
 
 %% (3) True gamma, theta
 gamma_discrete_true = Gamma_data.gamma(:).';  % row vector
-theta_true          = Gamma_data.theta(:).';  
+theta_true          = Gamma_data.theta(:).';
 
 %% (4) DRT Estimation & Uncertainty
 gamma_est_all      = cell(num_scenarios,1);
@@ -90,14 +110,13 @@ for s = 1:num_scenarios
     dt     = scenario_data.dt;
     dur    = scenario_data.dur;
     n      = scenario_data.n;
-    lambda = scenario_data.Lambda_hat; % D,E,F는 lambda = 10
-
+    lambda = scenario_data.Lambda_hat; % D,E,F lambda = 10
+    
     %% (a) DRT_estimation (단일 추정)
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
         DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0);
 
     %% (b) bootstrap (불확실성 추정)
-    %  여기서 [gamma_lower, gamma_upper, gamma_resamples] 리턴된다고 가정
     [gamma_lower, gamma_upper, gamma_resamples] = ...
         bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples);
 
@@ -120,8 +139,7 @@ for s = 1:num_scenarios
     type_data(s).gamma_lower     = gamma_lower_all{s};
     type_data(s).gamma_upper     = gamma_upper_all{s};
     type_data(s).gamma_resamples = gamma_resample_all{s};
-    % ★ 추가: 부트스트랩 평균 gamma
-    type_data(s).gamma_avg       = gamma_avg_all{s};
+    type_data(s).gamma_avg       = gamma_avg_all{s};  % ★ 추가
 end
 
 %% (6) Reflect back to AS_data
@@ -131,8 +149,7 @@ for k = 1:num_scenarios
     AS_data(type_indices(k)).gamma_lower     = type_data(k).gamma_lower;
     AS_data(type_indices(k)).gamma_upper     = type_data(k).gamma_upper;
     AS_data(type_indices(k)).gamma_resamples = type_data(k).gamma_resamples;
-    % ★ 평균도 저장
-    AS_data(type_indices(k)).gamma_avg       = type_data(k).gamma_avg;
+    AS_data(type_indices(k)).gamma_avg       = type_data(k).gamma_avg;  % ★ 추가
 end
 
 %% (7) Plot in Subplot(2 x 5) with Shaded Uncertainty
@@ -148,7 +165,7 @@ for s = 1:num_scenarios
     th_s = theta_discrete_all{s}(:).';
     gl_s = gamma_lower_all{s}(:).';
     gu_s = gamma_upper_all{s}(:).';
-    ga_s = gamma_avg_all{s}(:).';      % ★ 중앙선 = 부트스트랩 평균
+    ga_s = gamma_avg_all{s}(:).';      % 중앙선 = 부트스트랩 평균
     plotColor = c_mat(s,:);           % 시나리오별 색상
 
     % (1) 불확실성 영역 (음영 + 투명도) -> 테두리 X
@@ -175,7 +192,7 @@ end
 %% (8) Check gamma_est within [gamma_lower, gamma_upper]
 fprintf('\n=== Check gamma_est within [gamma_lower, gamma_upper] ===\n');
 for s = 1:num_scenarios
-    ga_s = gamma_est_all{s};  % DRT_estimation 결과
+    ga_s = gamma_avg_all{s};  % DRT_estimation 결과
     gl_s = gamma_lower_all{s};
     gu_s = gamma_upper_all{s};
 
@@ -190,9 +207,9 @@ for s = 1:num_scenarios
 end
 
 %% (9) Save with original variable name (no switch)
-save_folder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT';
+save_folder   = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT';
 save_filename = [AS_name, '.mat'];
-save_path = fullfile(save_folder, save_filename);
+save_path     = fullfile(save_folder, save_filename);
 
 % eval로 원본 변수명에 대입
 eval([AS_name, ' = AS_data;']);
@@ -200,5 +217,20 @@ eval([AS_name, ' = AS_data;']);
 eval(['save(''', save_path,''',''',AS_name,''',''-v7.3'');']);
 
 fprintf('\n[INFO] Saved to %s\n', save_path);
+
+%% ===========================
+% (예시) DRT_estimation, bootstrap_uncertainty 함수는
+%        별도 .m 파일이든 내부 함수이든 이미 정의되어 있다고 가정
+%        --------------------------------------------------
+%        필요하다면 아래와 같이 간단한 signature만 표기 예시
+% function [gamma_est, V_est, theta_discrete, tau_discrete, something] = ...
+%       DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0)
+%     % ...
+% end
+%
+% function [gamma_lower, gamma_upper, gamma_resamples] = ...
+%       bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples)
+%     % ...
+% end
 
 

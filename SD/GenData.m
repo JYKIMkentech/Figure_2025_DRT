@@ -102,8 +102,13 @@ gamma_discrete_true_bimodal = gamma_discrete_true_bimodal / max(gamma_discrete_t
 %% (7) Initialize Structs
 AS1_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS1_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS1_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+
 AS2_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS2_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS2_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 
 %% (8) Voltage Calculation (Unimodal)
 gamma_discrete_true = gamma_discrete_true_unimodal;
@@ -134,6 +139,7 @@ for s = 1:num_scenarios
         V_est(k_idx) = OCV + R0*ik(k_idx) + sum(V_RC(:, k_idx));
     end
     
+    % -------------------------------
     % Add noise (1%)
     noise_level = 0.01;
     V_sd_1per = V_est + noise_level .* V_est .* randn(size(V_est));
@@ -141,16 +147,35 @@ for s = 1:num_scenarios
     % Add noise (2%)
     noise_level = 0.02;
     V_sd_2per = V_est + noise_level .* V_est .* randn(size(V_est));
-
+    
+    % Add noise (3%)
+    noise_level = 0.03;
+    V_sd_3per = V_est + noise_level .* V_est .* randn(size(V_est));
+    
+    % Add noise (4%)
+    noise_level = 0.04;
+    V_sd_4per = V_est + noise_level .* V_est .* randn(size(V_est));
+    % -------------------------------
+    
     AS1_1per(s).SN = s;
-    AS1_1per(s).V = V_sd_1per;
-    AS1_1per(s).I = ik;
-    AS1_1per(s).t = t;
+    AS1_1per(s).V  = V_sd_1per;
+    AS1_1per(s).I  = ik;
+    AS1_1per(s).t  = t;
 
     AS1_2per(s).SN = s;
-    AS1_2per(s).V = V_sd_2per;
-    AS1_2per(s).I = ik;
-    AS1_2per(s).t = t;
+    AS1_2per(s).V  = V_sd_2per;
+    AS1_2per(s).I  = ik;
+    AS1_2per(s).t  = t;
+    
+    AS1_3per(s).SN = s;
+    AS1_3per(s).V  = V_sd_3per;
+    AS1_3per(s).I  = ik;
+    AS1_3per(s).t  = t;
+
+    AS1_4per(s).SN = s;
+    AS1_4per(s).V  = V_sd_4per;
+    AS1_4per(s).I  = ik;
+    AS1_4per(s).t  = t;
 end
 
 %% (9) Voltage Calculation (Bimodal)
@@ -182,6 +207,7 @@ for s = 1:num_scenarios
         V_est(k_idx) = OCV + R0*ik(k_idx) + sum(V_RC(:, k_idx));
     end
     
+    % -------------------------------
     % Add noise (1%)
     noise_level = 0.01;
     V_sd_1per = V_est + noise_level .* V_est .* randn(size(V_est));
@@ -190,22 +216,44 @@ for s = 1:num_scenarios
     noise_level = 0.02;
     V_sd_2per = V_est + noise_level .* V_est .* randn(size(V_est));
     
+    % Add noise (3%)
+    noise_level = 0.03;
+    V_sd_3per = V_est + noise_level .* V_est .* randn(size(V_est));
+    
+    % Add noise (4%)
+    noise_level = 0.04;
+    V_sd_4per = V_est + noise_level .* V_est .* randn(size(V_est));
+    % -------------------------------
+    
     AS2_1per(s).SN = s;
-    AS2_1per(s).V = V_sd_1per;
-    AS2_1per(s).I = ik;
-    AS2_1per(s).t = t;
+    AS2_1per(s).V  = V_sd_1per;
+    AS2_1per(s).I  = ik;
+    AS2_1per(s).t  = t;
 
     AS2_2per(s).SN = s;
-    AS2_2per(s).V = V_sd_2per;
-    AS2_2per(s).I = ik;
-    AS2_2per(s).t = t;
+    AS2_2per(s).V  = V_sd_2per;
+    AS2_2per(s).I  = ik;
+    AS2_2per(s).t  = t;
+    
+    AS2_3per(s).SN = s;
+    AS2_3per(s).V  = V_sd_3per;
+    AS2_3per(s).I  = ik;
+    AS2_3per(s).t  = t;
+
+    AS2_4per(s).SN = s;
+    AS2_4per(s).V  = V_sd_4per;
+    AS2_4per(s).I  = ik;
+    AS2_4per(s).t  = t;
 end
 
 %% (10) 시나리오별 Current & Voltage Plot
-figure_names = {'AS1 1per', 'AS1 2per', ...
-                'AS2 1per', 'AS2 2per'};
-struct_cases = {AS1_1per, AS1_2per, AS2_1per, AS2_2per};
+figure_names = {'AS1 1per', 'AS1 2per', 'AS1 3per', 'AS1 4per',...
+                'AS2 1per', 'AS2 2per', 'AS2 3per', 'AS2 4per'};
+struct_cases = {AS1_1per, AS1_2per, AS1_3per, AS1_4per,...
+                AS2_1per, AS2_2per, AS2_3per, AS2_4per};
 
+% 예시로 1,2,3,4% 잡음을 전부 각각 10개 시나리오 subplot에 표시하고 싶다면,
+% 아래처럼 반복문을 늘릴 수 있습니다. (그렇지 않고 일부만 그려도 무방)
 for case_idx = 1:length(struct_cases)
     current_case = struct_cases{case_idx};
     figure('Name', figure_names{case_idx}, 'NumberTitle', 'off');
@@ -220,23 +268,23 @@ for case_idx = 1:length(struct_cases)
         yyaxis left
         % 전류: 파란색 (Blue)
         plot(current_case(s).t, current_case(s).I, '-', ...
-            'LineWidth', 3, 'Color', color_current);
-        ylabel('Current (A)', 'FontSize', 12);
+            'LineWidth', 2, 'Color', color_current);
+        ylabel('Current (A)', 'FontSize', 10);
         hold on;
         
         yyaxis right
         % 전압: 빨간색 (Red)
         plot(current_case(s).t, current_case(s).V, '-', ...
-            'LineWidth', 3, 'Color', color_voltage);
-        ylabel('Voltage (V)', 'FontSize', 12);
+            'LineWidth', 2, 'Color', color_voltage);
+        ylabel('Voltage (V)', 'FontSize', 10);
         
-        xlabel('Time (s)', 'FontSize', 12);
-        title(['Scenario ', num2str(current_case(s).SN)], 'FontSize', 14);
+        xlabel('Time (s)', 'FontSize', 10);
+        title(['Scenario ', num2str(current_case(s).SN)], 'FontSize', 12);
         legend('Current', 'Voltage', 'Location', 'best');
         hold off;
     end
     
-    sgtitle(figure_names{case_idx}, 'FontSize', 16);
+    sgtitle(figure_names{case_idx}, 'FontSize', 14);
 end
 
 %% (11) Gamma vs Theta Plot
@@ -273,7 +321,7 @@ for s = 1:num_scenarios
 end
 sgtitle('Current Scenarios','FontSize',16);
 
-%% (13) 예: AS2_1per에서 시나리오 6,7,8,9만 2x2 subplot
+%% (13) 예: AS2_1per에서 시나리오 6,7,8,9만 2x2 subplot (필요시)
 scenarios_to_plot = [6, 7, 8, 9];
 figure('Name','AS2_1per - Scenarios 6,7,8,9','NumberTitle','off');
 
@@ -302,12 +350,19 @@ end
 sgtitle('AS2\_1per: Scenarios 6,7,8,9', 'FontSize', 16);
 
 %% (14) Save
+% 1%,2%,3%,4% 각각 따로 저장
 save(fullfile(save_path, 'AS1_1per.mat'), 'AS1_1per');
 save(fullfile(save_path, 'AS1_2per.mat'), 'AS1_2per');
+save(fullfile(save_path, 'AS1_3per.mat'), 'AS1_3per');
+save(fullfile(save_path, 'AS1_4per.mat'), 'AS1_4per');
+
 save(fullfile(save_path, 'AS2_1per.mat'), 'AS2_1per');
 save(fullfile(save_path, 'AS2_2per.mat'), 'AS2_2per');
+save(fullfile(save_path, 'AS2_3per.mat'), 'AS2_3per');
+save(fullfile(save_path, 'AS2_4per.mat'), 'AS2_4per');
 
 save(fullfile(save_path, 'Gamma_unimodal.mat'), 'Gamma_unimodal');
 save(fullfile(save_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
+
 
 
