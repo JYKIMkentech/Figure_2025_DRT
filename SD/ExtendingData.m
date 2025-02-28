@@ -4,10 +4,10 @@ clear; clc; close all;
 data_dir = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD';
 output_dir = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_new';
 
-% 8개의 특정 파일 목록 (1%,2%,3%,4%)
+% 9개의 특정 파일 목록 (1%,2%,3%,4%,5%)
 file_names = {
-    'AS1_1per.mat', 'AS1_2per.mat', 'AS1_3per.mat', 'AS1_4per.mat',...
-    'AS2_1per.mat', 'AS2_2per.mat', 'AS2_3per.mat', 'AS2_4per.mat'
+    'AS1_1per.mat', 'AS1_2per.mat', 'AS1_3per.mat', 'AS1_4per.mat', 'AS1_5per.mat',...
+    'AS2_1per.mat', 'AS2_2per.mat', 'AS2_3per.mat', 'AS2_4per.mat', 'AS2_5per.mat'
 };
 
 %% (2) 파일 정보를 가져오기
@@ -161,3 +161,4 @@ for fileIdx = 1:length(mat_files)
     
     disp(['파일 처리 완료: ', name]);
 end
+

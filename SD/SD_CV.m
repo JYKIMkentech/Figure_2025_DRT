@@ -12,9 +12,9 @@ OCV            = 0;
 R0             = 0.1;
 
 %% =============== 데이터 로드 ===============
-save_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
-file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\'; 
-%file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_new\'; 
+save_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\';
+%file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\'; 
+file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_new\'; 
 mat_files = dir(fullfile(file_path, '*.mat'));
 
 if isempty(mat_files)
@@ -27,10 +27,10 @@ for file = mat_files'
 end
 
 %% =============== 데이터셋 선택 ===============
-% 1%,2%,3%,4%를 모두 포함한 8개 파일 이름
+% 1%,2%,3%,4%,5%를 모두 포함한 10개 파일 이름
 datasets = { ...
-    'AS1_1per_new', 'AS1_2per_new', 'AS1_3per_new', 'AS1_4per_new', ...
-    'AS2_1per_new', 'AS2_2per_new', 'AS2_3per_new', 'AS2_4per_new'};
+    'AS1_1per_new', 'AS1_2per_new', 'AS1_3per_new', 'AS1_4per_new', 'AS1_5per_new', ...
+    'AS2_1per_new', 'AS2_2per_new', 'AS2_3per_new', 'AS2_4per_new', 'AS2_5per_new'};
 
 disp('=== 분석할 데이터셋을 선택하세요 ===');
 for i = 1:length(datasets)

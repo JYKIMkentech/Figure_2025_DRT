@@ -1,8 +1,5 @@
 clc; clear; close all;
 
-% Set random seed for reproducibility
-rng(0);
-
 %% (1) 사용자 지정 색상 팔레트 (총 10가지)
 % 1:  [0.00000  0.45098  0.76078] (Blue)
 % 2:  [0.93725  0.75294  0.00000]
@@ -35,15 +32,15 @@ color_voltage = p_colors(3,:);  % Red  (#3)
 save_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD\';
 
 %% (3) Parameters
-num_scenarios = 10;  % Number of scenarios
-num_waves = 3;       % Number of sine waves per scenario
+num_scenarios = 10;       % Number of scenarios
+num_waves = 3;            % Number of sine waves per scenario
 t = linspace(0, 1000, 10001)';  % Time vector (0~1000 seconds, 10000 sample points)
 dt = t(2) - t(1);
-n = 201; % Number of RC elements
+n = 201;                % Number of RC elements
 
 %% (4) Setting T (Period)
-T_min = 15;           % Minimum period (seconds)
-T_max = 250;          % Maximum period (seconds)
+T_min = 15;             % Minimum period (seconds)
+T_max = 250;            % Maximum period (seconds)
 
 %% (5) Current Calculation
 A = zeros(num_scenarios, num_waves);        
@@ -100,15 +97,19 @@ gamma_discrete_true_bimodal = gamma1 + gamma2;
 gamma_discrete_true_bimodal = gamma_discrete_true_bimodal / max(gamma_discrete_true_bimodal);
 
 %% (7) Initialize Structs
+% Unimodal (AS1_xper)
 AS1_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS1_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});      % 추가 (5%)
 
+% Bimodal (AS2_xper)
 AS2_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
+AS2_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});      % 추가 (5%)
 
 %% (8) Voltage Calculation (Unimodal)
 gamma_discrete_true = gamma_discrete_true_unimodal;
@@ -155,27 +156,18 @@ for s = 1:num_scenarios
     % Add noise (4%)
     noise_level = 0.04;
     V_sd_4per = V_est + noise_level .* V_est .* randn(size(V_est));
+
+    % ---- (추가) 5% ----
+    noise_level = 0.05;
+    V_sd_5per = V_est + noise_level .* V_est .* randn(size(V_est));
     % -------------------------------
     
-    AS1_1per(s).SN = s;
-    AS1_1per(s).V  = V_sd_1per;
-    AS1_1per(s).I  = ik;
-    AS1_1per(s).t  = t;
-
-    AS1_2per(s).SN = s;
-    AS1_2per(s).V  = V_sd_2per;
-    AS1_2per(s).I  = ik;
-    AS1_2per(s).t  = t;
-    
-    AS1_3per(s).SN = s;
-    AS1_3per(s).V  = V_sd_3per;
-    AS1_3per(s).I  = ik;
-    AS1_3per(s).t  = t;
-
-    AS1_4per(s).SN = s;
-    AS1_4per(s).V  = V_sd_4per;
-    AS1_4per(s).I  = ik;
-    AS1_4per(s).t  = t;
+    % 저장
+    AS1_1per(s).SN = s;   AS1_1per(s).V  = V_sd_1per;   AS1_1per(s).I  = ik;  AS1_1per(s).t  = t;
+    AS1_2per(s).SN = s;   AS1_2per(s).V  = V_sd_2per;   AS1_2per(s).I  = ik;  AS1_2per(s).t  = t;
+    AS1_3per(s).SN = s;   AS1_3per(s).V  = V_sd_3per;   AS1_3per(s).I  = ik;  AS1_3per(s).t  = t;
+    AS1_4per(s).SN = s;   AS1_4per(s).V  = V_sd_4per;   AS1_4per(s).I  = ik;  AS1_4per(s).t  = t;
+    AS1_5per(s).SN = s;   AS1_5per(s).V  = V_sd_5per;   AS1_5per(s).I  = ik;  AS1_5per(s).t  = t;
 end
 
 %% (9) Voltage Calculation (Bimodal)
@@ -223,37 +215,27 @@ for s = 1:num_scenarios
     % Add noise (4%)
     noise_level = 0.04;
     V_sd_4per = V_est + noise_level .* V_est .* randn(size(V_est));
+
+    % ---- (추가) 5% ----
+    noise_level = 0.05;
+    V_sd_5per = V_est + noise_level .* V_est .* randn(size(V_est));
     % -------------------------------
     
-    AS2_1per(s).SN = s;
-    AS2_1per(s).V  = V_sd_1per;
-    AS2_1per(s).I  = ik;
-    AS2_1per(s).t  = t;
-
-    AS2_2per(s).SN = s;
-    AS2_2per(s).V  = V_sd_2per;
-    AS2_2per(s).I  = ik;
-    AS2_2per(s).t  = t;
-    
-    AS2_3per(s).SN = s;
-    AS2_3per(s).V  = V_sd_3per;
-    AS2_3per(s).I  = ik;
-    AS2_3per(s).t  = t;
-
-    AS2_4per(s).SN = s;
-    AS2_4per(s).V  = V_sd_4per;
-    AS2_4per(s).I  = ik;
-    AS2_4per(s).t  = t;
+    % 저장
+    AS2_1per(s).SN = s;   AS2_1per(s).V  = V_sd_1per;   AS2_1per(s).I  = ik;  AS2_1per(s).t  = t;
+    AS2_2per(s).SN = s;   AS2_2per(s).V  = V_sd_2per;   AS2_2per(s).I  = ik;  AS2_2per(s).t  = t;
+    AS2_3per(s).SN = s;   AS2_3per(s).V  = V_sd_3per;   AS2_3per(s).I  = ik;  AS2_3per(s).t  = t;
+    AS2_4per(s).SN = s;   AS2_4per(s).V  = V_sd_4per;   AS2_4per(s).I  = ik;  AS2_4per(s).t  = t;
+    AS2_5per(s).SN = s;   AS2_5per(s).V  = V_sd_5per;   AS2_5per(s).I  = ik;  AS2_5per(s).t  = t;
 end
 
 %% (10) 시나리오별 Current & Voltage Plot
-figure_names = {'AS1 1per', 'AS1 2per', 'AS1 3per', 'AS1 4per',...
+figure_names = {'AS1 1per', 'AS1 2per', 'AS1 3per', 'AS1 4per', ...
                 'AS2 1per', 'AS2 2per', 'AS2 3per', 'AS2 4per'};
-struct_cases = {AS1_1per, AS1_2per, AS1_3per, AS1_4per,...
+
+struct_cases = {AS1_1per, AS1_2per, AS1_3per, AS1_4per, ...
                 AS2_1per, AS2_2per, AS2_3per, AS2_4per};
 
-% 예시로 1,2,3,4% 잡음을 전부 각각 10개 시나리오 subplot에 표시하고 싶다면,
-% 아래처럼 반복문을 늘릴 수 있습니다. (그렇지 않고 일부만 그려도 무방)
 for case_idx = 1:length(struct_cases)
     current_case = struct_cases{case_idx};
     figure('Name', figure_names{case_idx}, 'NumberTitle', 'off');
@@ -266,14 +248,12 @@ for case_idx = 1:length(struct_cases)
         subplot(num_rows, num_cols, s);
         
         yyaxis left
-        % 전류: 파란색 (Blue)
         plot(current_case(s).t, current_case(s).I, '-', ...
             'LineWidth', 2, 'Color', color_current);
         ylabel('Current (A)', 'FontSize', 10);
         hold on;
         
         yyaxis right
-        % 전압: 빨간색 (Red)
         plot(current_case(s).t, current_case(s).V, '-', ...
             'LineWidth', 2, 'Color', color_voltage);
         ylabel('Voltage (V)', 'FontSize', 10);
@@ -313,7 +293,6 @@ num_cols = 2;
 
 for s = 1:num_scenarios
     subplot(num_rows, num_cols, s);
-    % 여기서는 전류만 표시 -> 파란색
     plot(t, ik_scenarios(s,:), '-', 'LineWidth', 3, 'Color', color_current);
     xlabel('Time (s)','FontSize',12);
     ylabel('Current (A)','FontSize',12);
@@ -330,16 +309,12 @@ for idx = 1:length(scenarios_to_plot)
     subplot(2, 2, idx);
     
     yyaxis left
-    % 전류: 파란색
-    plot(AS2_1per(s).t, AS2_1per(s).I, '-', ...
-        'LineWidth', 3, 'Color', color_current);
+    plot(AS2_1per(s).t, AS2_1per(s).I, '-', 'LineWidth', 3, 'Color', color_current);
     ylabel('Current (A)', 'FontSize', 12);
     hold on;
     
     yyaxis right
-    % 전압: 빨간색
-    plot(AS2_1per(s).t, AS2_1per(s).V, '-', ...
-        'LineWidth', 3, 'Color', color_voltage);
+    plot(AS2_1per(s).t, AS2_1per(s).V, '-', 'LineWidth', 3, 'Color', color_voltage);
     ylabel('Voltage (V)', 'FontSize', 12);
     
     xlabel('Time (s)', 'FontSize', 12);
@@ -350,7 +325,7 @@ end
 sgtitle('AS2\_1per: Scenarios 6,7,8,9', 'FontSize', 16);
 
 %% (14) Save
-% 1%,2%,3%,4% 각각 따로 저장
+% 기존 1%,2%,3%,4% 저장
 save(fullfile(save_path, 'AS1_1per.mat'), 'AS1_1per');
 save(fullfile(save_path, 'AS1_2per.mat'), 'AS1_2per');
 save(fullfile(save_path, 'AS1_3per.mat'), 'AS1_3per');
@@ -361,8 +336,14 @@ save(fullfile(save_path, 'AS2_2per.mat'), 'AS2_2per');
 save(fullfile(save_path, 'AS2_3per.mat'), 'AS2_3per');
 save(fullfile(save_path, 'AS2_4per.mat'), 'AS2_4per');
 
+% ---- (추가) 5% 저장 ----
+save(fullfile(save_path, 'AS1_5per.mat'), 'AS1_5per');
+save(fullfile(save_path, 'AS2_5per.mat'), 'AS2_5per');
+
+% Gamma도 저장
 save(fullfile(save_path, 'Gamma_unimodal.mat'), 'Gamma_unimodal');
 save(fullfile(save_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
+
 
 
 
