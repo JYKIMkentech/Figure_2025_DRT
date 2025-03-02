@@ -42,7 +42,7 @@ p_colors = [
 disp('1) Effect of dt  => compare group: A, D, E, F');
 disp('2) Effect of dur => compare group: A, G, H');
 disp('3) Effect of N   => compare group: A, B, C');
-disp('4) Effect of error => compare group: A(1%) vs. A(2%)');
+disp('4) Effect of error => compare group: A(1%) vs. A(5%)');
 effectChoice = input('Enter a number (1~4): ');
 
 %% (2) 데이터 로드 및 그룹 설정
@@ -50,25 +50,25 @@ dataFolder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
 
 switch effectChoice
     case 1
-        dataFile   = 'AS1_1per_new.mat';
-        load(fullfile(dataFolder, dataFile),'AS1_1per_new');
-        AS_data    = AS1_1per_new;  
+        dataFile   = 'AS1_5per_new.mat';
+        load(fullfile(dataFolder, dataFile),'AS1_5per_new');
+        AS_data    = AS1_5per_new;  
         effectName   = 'dt';
         typeGroup    = {'A','D','E','F'};  
         legendLabels = {'dt=0.1','dt=0.2','dt=1','dt=2'};  
 
     case 2
-        dataFile   = 'AS1_1per_new.mat';
-        load(fullfile(dataFolder, dataFile),'AS1_1per_new');
-        AS_data    = AS1_1per_new;
+        dataFile   = 'AS1_5per_new.mat';
+        load(fullfile(dataFolder, dataFile),'AS1_5per_new');
+        AS_data    = AS1_5per_new;
         effectName   = 'dur';
         typeGroup    = {'A','G','H'};
         legendLabels = {'Dur=1000','Dur=500','Dur=250'};  
 
     case 3
-        dataFile   = 'AS1_1per_new.mat';
-        load(fullfile(dataFolder, dataFile),'AS1_1per_new');
-        AS_data    = AS1_1per_new;
+        dataFile   = 'AS1_5per_new.mat';
+        load(fullfile(dataFolder, dataFile),'AS1_5per_new');
+        AS_data    = AS1_5per_new;
         effectName   = 'N';
         typeGroup    = {'A','B','C'};
         legendLabels = {'N=201','N=101','N=21'};          
@@ -79,33 +79,33 @@ switch effectChoice
         tmp1 = load(fullfile(dataFolder, dataFile_1per), 'AS1_1per_new');
         AS_data_1per = tmp1.AS1_1per_new;
 
-        % (B) 2% 에러 데이터 불러오기
-        dataFile_2per = 'AS1_2per_new.mat';
-        tmp2 = load(fullfile(dataFolder, dataFile_2per), 'AS1_2per_new');
-        AS_data_2per = tmp2.AS1_2per_new;
+        % (B) 5% 에러 데이터 불러오기
+        dataFile_2per = 'AS1_5per_new.mat';
+        tmp2 = load(fullfile(dataFolder, dataFile_2per), 'AS1_5per_new');
+        AS_data_5per = tmp2.AS1_5per_new;
 
         % (C) 두 데이터에서 Type='A'만 골라서, type 이름을 'A_1per', 'A_2per' 로 수정
         idxA_1per = strcmp({AS_data_1per.type}, 'A');
-        idxA_2per = strcmp({AS_data_2per.type}, 'A');
+        idxA_2per = strcmp({AS_data_5per.type}, 'A');
 
         Adata_1per = AS_data_1per(idxA_1per);
-        Adata_2per = AS_data_2per(idxA_2per);
+        Adata_5per = AS_data_5per(idxA_5per);
 
         % type 이름 바꿔주기 (ex. 'A' -> 'A_1per' / 'A_2per')
         for iA = 1:numel(Adata_1per)
             Adata_1per(iA).type = 'A_1per';
         end
-        for iA = 1:numel(Adata_2per)
-            Adata_2per(iA).type = 'A_2per';
+        for iA = 1:numel(Adata_5per)
+            Adata_5per(iA).type = 'A_2per';
         end
 
         % (D) 이제 하나의 구조체 배열로 합침
-        AS_data = [Adata_1per, Adata_2per];
+        AS_data = [Adata_1per, Adata_5per];
 
         % (E) 효과명, 그룹, 범례
         effectName   = 'error';
-        typeGroup    = {'A_1per','A_2per'};
-        legendLabels = {'A(1% error)','A(2% error)'};
+        typeGroup    = {'A_1per','A_5per'};
+        legendLabels = {'A(1% error)','A(5% error)'};
 
     otherwise
         error('Invalid choice. Please choose 1, 2, 3, or 4.');

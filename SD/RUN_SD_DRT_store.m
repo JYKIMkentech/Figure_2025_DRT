@@ -3,14 +3,13 @@ clc; clear; close all;
 
 %% (A) Description
 % - 기존 DRT 추정 + 구조체 업데이트
-% - 모든 시나리오(최대 10개 가정)를 2x5 subplot에 표시
+% - 모든 시나리오(최대 10개 가정)를 2x5 subplot에 표시 (5% 시나리오 추가)
 % - eval()을 통해 원본 변수(AS1_1per_new 등)에 대입 + save
 % - 마지막에 gamma_est ~ [gamma_lower, gamma_upper] 범위 확인
-% - (수정) fill()를 이용해 불확실성 영역(5~95%)에 음영 표시,
-%          중앙선은 부트스트랩 평균(gamma_avg)로 함
-% - (추가) 테두리 없애기('EdgeColor','none'), gamma_avg를 구조체에 저장
-%
-% - (확장) 3%,4% 시나리오(AS1_3per_new, AS1_4per_new, AS2_3per_new, AS2_4per_new)도 추가
+% - fill()를 이용해 불확실성 영역(5~95%)에 음영 표시,
+%   중앙선은 부트스트랩 평균(gamma_avg)로 함
+% - 테두리 없애기('EdgeColor','none'), gamma_avg를 구조체에 저장
+% - 1%,2%,3%,4%,5% 시나리오 모두 처리
 
 %% (B) Graphic Parameters
 axisFontSize   = 14;
@@ -26,27 +25,27 @@ for file = mat_files'
 end
 
 %% (2) Prepare references
-% (3%, 4% 추가)
-% 앞의 4개는 Unimodal -> Gamma_unimodal
-% 뒤의 4개는 Bimodal -> Gamma_bimodal
+% 1%,2%,3%,4%,5% 시나리오 추가
+%  - 앞의 5개(AS1)는 Unimodal -> Gamma_unimodal
+%  - 뒤의 5개(AS2)는 Bimodal  -> Gamma_bimodal
 AS_structs = {
-    AS1_1per_new, AS1_2per_new, AS1_3per_new, AS1_4per_new, ...
-    AS2_1per_new, AS2_2per_new, AS2_3per_new, AS2_4per_new};
+    AS1_1per_new, AS1_2per_new, AS1_3per_new, AS1_4per_new, AS1_5per_new, ...
+    AS2_1per_new, AS2_2per_new, AS2_3per_new, AS2_4per_new, AS2_5per_new};
 
 AS_names = {
-    'AS1_1per_new','AS1_2per_new','AS1_3per_new','AS1_4per_new',...
-    'AS2_1per_new','AS2_2per_new','AS2_3per_new','AS2_4per_new'};
+    'AS1_1per_new','AS1_2per_new','AS1_3per_new','AS1_4per_new','AS1_5per_new', ...
+    'AS2_1per_new','AS2_2per_new','AS2_3per_new','AS2_4per_new','AS2_5per_new'};
 
 Gamma_structs = {
-    Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, ... % AS1
-    Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal };   % AS2
+    Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, Gamma_unimodal, ...
+    Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal,  Gamma_bimodal};
 
 fprintf('Available datasets:\n');
 for idx = 1:length(AS_names)
     fprintf('%d: %s\n', idx, AS_names{idx});
 end
-dataset_idx = input('Select a dataset to process (enter the number 1~8): ');
 
+dataset_idx = input('Select a dataset to process (enter the number 1~10): ');
 if isempty(dataset_idx) || dataset_idx < 1 || dataset_idx > length(AS_names)
     error('Invalid dataset index.');
 end
@@ -110,7 +109,7 @@ for s = 1:num_scenarios
     dt     = scenario_data.dt;
     dur    = scenario_data.dur;
     n      = scenario_data.n;
-    lambda = scenario_data.Lambda_hat; % D,E,F lambda = 10
+    lambda = scenario_data.Lambda_hat; % ex) D,E,F -> lambda = 10 등등
     
     %% (a) DRT_estimation (단일 추정)
     [gamma_est, V_est, theta_discrete, tau_discrete, ~] = ...
@@ -153,6 +152,7 @@ for k = 1:num_scenarios
 end
 
 %% (7) Plot in Subplot(2 x 5) with Shaded Uncertainty
+% (시나리오가 최대 10개일 수 있으므로, 2 x 5 형태로 그리면 최대 10개까지 표시 가능)
 num_cols = 5;
 num_rows = 2;
 
@@ -165,8 +165,8 @@ for s = 1:num_scenarios
     th_s = theta_discrete_all{s}(:).';
     gl_s = gamma_lower_all{s}(:).';
     gu_s = gamma_upper_all{s}(:).';
-    ga_s = gamma_avg_all{s}(:).';      % 중앙선 = 부트스트랩 평균
-    plotColor = c_mat(s,:);           % 시나리오별 색상
+    ga_s = gamma_avg_all{s}(:).';  % 중앙선 = 부트스트랩 평균
+    plotColor = c_mat(s,:);       % 시나리오별 색상
 
     % (1) 불확실성 영역 (음영 + 투명도) -> 테두리 X
     fill([th_s, fliplr(th_s)], ...
@@ -192,7 +192,7 @@ end
 %% (8) Check gamma_est within [gamma_lower, gamma_upper]
 fprintf('\n=== Check gamma_est within [gamma_lower, gamma_upper] ===\n');
 for s = 1:num_scenarios
-    ga_s = gamma_avg_all{s};  % DRT_estimation 결과
+    ga_s = gamma_avg_all{s};  % 부트스트랩 평균
     gl_s = gamma_lower_all{s};
     gu_s = gamma_upper_all{s};
 
@@ -218,19 +218,7 @@ eval(['save(''', save_path,''',''',AS_name,''',''-v7.3'');']);
 
 fprintf('\n[INFO] Saved to %s\n', save_path);
 
-%% ===========================
-% (예시) DRT_estimation, bootstrap_uncertainty 함수는
-%        별도 .m 파일이든 내부 함수이든 이미 정의되어 있다고 가정
-%        --------------------------------------------------
-%        필요하다면 아래와 같이 간단한 signature만 표기 예시
-% function [gamma_est, V_est, theta_discrete, tau_discrete, something] = ...
-%       DRT_estimation(t, ik, V_sd, lambda, n, dt, dur, OCV, R0)
-%     % ...
-% end
-%
-% function [gamma_lower, gamma_upper, gamma_resamples] = ...
-%       bootstrap_uncertainty(t, ik, V_sd, lambda, n, dt, dur, OCV, R0, num_resamples)
-%     % ...
-% end
+
+
 
 

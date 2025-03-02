@@ -1,5 +1,8 @@
 clc; clear; close all;
 
+%% (0) 재현성을 위한 rng 고정
+rng(0);  % 혹은 rng('default') 등. 반복 실행 시 동일 결과 원하면 사용.
+
 %% (1) 사용자 지정 색상 팔레트 (총 10가지)
 % 1:  [0.00000  0.45098  0.76078] (Blue)
 % 2:  [0.93725  0.75294  0.00000]
@@ -36,7 +39,7 @@ num_scenarios = 10;       % Number of scenarios
 num_waves = 3;            % Number of sine waves per scenario
 t = linspace(0, 1000, 10001)';  % Time vector (0~1000 seconds, 10000 sample points)
 dt = t(2) - t(1);
-n = 201;                % Number of RC elements
+n = 201;                  % Number of RC elements
 
 %% (4) Setting T (Period)
 T_min = 15;             % Minimum period (seconds)
@@ -102,14 +105,14 @@ AS1_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS1_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
-AS1_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});      % 추가 (5%)
+AS1_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});  % 5%
 
 % Bimodal (AS2_xper)
 AS2_1per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_2per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_3per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
 AS2_4per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});
-AS2_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});      % 추가 (5%)
+AS2_5per = struct('SN', {}, 'V', {}, 'I', {}, 't', {});  % 5%
 
 %% (8) Voltage Calculation (Unimodal)
 gamma_discrete_true = gamma_discrete_true_unimodal;
@@ -163,11 +166,11 @@ for s = 1:num_scenarios
     % -------------------------------
     
     % 저장
-    AS1_1per(s).SN = s;   AS1_1per(s).V  = V_sd_1per;   AS1_1per(s).I  = ik;  AS1_1per(s).t  = t;
-    AS1_2per(s).SN = s;   AS1_2per(s).V  = V_sd_2per;   AS1_2per(s).I  = ik;  AS1_2per(s).t  = t;
-    AS1_3per(s).SN = s;   AS1_3per(s).V  = V_sd_3per;   AS1_3per(s).I  = ik;  AS1_3per(s).t  = t;
-    AS1_4per(s).SN = s;   AS1_4per(s).V  = V_sd_4per;   AS1_4per(s).I  = ik;  AS1_4per(s).t  = t;
-    AS1_5per(s).SN = s;   AS1_5per(s).V  = V_sd_5per;   AS1_5per(s).I  = ik;  AS1_5per(s).t  = t;
+    AS1_1per(s).SN = s;   AS1_1per(s).V = V_sd_1per;  AS1_1per(s).I = ik;  AS1_1per(s).t = t;
+    AS1_2per(s).SN = s;   AS1_2per(s).V = V_sd_2per;  AS1_2per(s).I = ik;  AS1_2per(s).t = t;
+    AS1_3per(s).SN = s;   AS1_3per(s).V = V_sd_3per;  AS1_3per(s).I = ik;  AS1_3per(s).t = t;
+    AS1_4per(s).SN = s;   AS1_4per(s).V = V_sd_4per;  AS1_4per(s).I = ik;  AS1_4per(s).t = t;
+    AS1_5per(s).SN = s;   AS1_5per(s).V = V_sd_5per;  AS1_5per(s).I = ik;  AS1_5per(s).t = t;
 end
 
 %% (9) Voltage Calculation (Bimodal)
@@ -222,22 +225,29 @@ for s = 1:num_scenarios
     % -------------------------------
     
     % 저장
-    AS2_1per(s).SN = s;   AS2_1per(s).V  = V_sd_1per;   AS2_1per(s).I  = ik;  AS2_1per(s).t  = t;
-    AS2_2per(s).SN = s;   AS2_2per(s).V  = V_sd_2per;   AS2_2per(s).I  = ik;  AS2_2per(s).t  = t;
-    AS2_3per(s).SN = s;   AS2_3per(s).V  = V_sd_3per;   AS2_3per(s).I  = ik;  AS2_3per(s).t  = t;
-    AS2_4per(s).SN = s;   AS2_4per(s).V  = V_sd_4per;   AS2_4per(s).I  = ik;  AS2_4per(s).t  = t;
-    AS2_5per(s).SN = s;   AS2_5per(s).V  = V_sd_5per;   AS2_5per(s).I  = ik;  AS2_5per(s).t  = t;
+    AS2_1per(s).SN = s;   AS2_1per(s).V = V_sd_1per;  AS2_1per(s).I = ik;  AS2_1per(s).t = t;
+    AS2_2per(s).SN = s;   AS2_2per(s).V = V_sd_2per;  AS2_2per(s).I = ik;  AS2_2per(s).t = t;
+    AS2_3per(s).SN = s;   AS2_3per(s).V = V_sd_3per;  AS2_3per(s).I = ik;  AS2_3per(s).t = t;
+    AS2_4per(s).SN = s;   AS2_4per(s).V = V_sd_4per;  AS2_4per(s).I = ik;  AS2_4per(s).t = t;
+    AS2_5per(s).SN = s;   AS2_5per(s).V = V_sd_5per;  AS2_5per(s).I = ik;  AS2_5per(s).t = t;
 end
 
-%% (10) 시나리오별 Current & Voltage Plot
-figure_names = {'AS1 1per', 'AS1 2per', 'AS1 3per', 'AS1 4per', ...
-                'AS2 1per', 'AS2 2per', 'AS2 3per', 'AS2 4per'};
+%% (10) 시나리오별 Current & Voltage Plot (1%~5%)
+% 1~5% 각각 AS1, AS2를 모두 그리려면 총 10개 구조체를 순회
+figure_names = {
+    'AS1 1per','AS1 2per','AS1 3per','AS1 4per','AS1 5per',...
+    'AS2 1per','AS2 2per','AS2 3per','AS2 4per','AS2 5per'
+};
 
-struct_cases = {AS1_1per, AS1_2per, AS1_3per, AS1_4per, ...
-                AS2_1per, AS2_2per, AS2_3per, AS2_4per};
+struct_cases = {
+    AS1_1per, AS1_2per, AS1_3per, AS1_4per, AS1_5per, ...
+    AS2_1per, AS2_2per, AS2_3per, AS2_4per, AS2_5per
+};
 
 for case_idx = 1:length(struct_cases)
     current_case = struct_cases{case_idx};
+    
+    % 새 Figure
     figure('Name', figure_names{case_idx}, 'NumberTitle', 'off');
     
     % Create a grid of subplots (5 rows x 2 columns) for 10 scenarios
@@ -263,7 +273,6 @@ for case_idx = 1:length(struct_cases)
         legend('Current', 'Voltage', 'Location', 'best');
         hold off;
     end
-    
     sgtitle(figure_names{case_idx}, 'FontSize', 14);
 end
 
@@ -301,6 +310,7 @@ end
 sgtitle('Current Scenarios','FontSize',16);
 
 %% (13) 예: AS2_1per에서 시나리오 6,7,8,9만 2x2 subplot (필요시)
+% (5%도 동일하게 특정 시나리오만 보고 싶다면 구조체만 바꿔서 그리면 됩니다.)
 scenarios_to_plot = [6, 7, 8, 9];
 figure('Name','AS2_1per - Scenarios 6,7,8,9','NumberTitle','off');
 
@@ -325,25 +335,21 @@ end
 sgtitle('AS2\_1per: Scenarios 6,7,8,9', 'FontSize', 16);
 
 %% (14) Save
-% 기존 1%,2%,3%,4% 저장
+% 1%, 2%, 3%, 4%, 5% 저장
 save(fullfile(save_path, 'AS1_1per.mat'), 'AS1_1per');
 save(fullfile(save_path, 'AS1_2per.mat'), 'AS1_2per');
 save(fullfile(save_path, 'AS1_3per.mat'), 'AS1_3per');
 save(fullfile(save_path, 'AS1_4per.mat'), 'AS1_4per');
+save(fullfile(save_path, 'AS1_5per.mat'), 'AS1_5per');
 
 save(fullfile(save_path, 'AS2_1per.mat'), 'AS2_1per');
 save(fullfile(save_path, 'AS2_2per.mat'), 'AS2_2per');
 save(fullfile(save_path, 'AS2_3per.mat'), 'AS2_3per');
 save(fullfile(save_path, 'AS2_4per.mat'), 'AS2_4per');
-
-% ---- (추가) 5% 저장 ----
-save(fullfile(save_path, 'AS1_5per.mat'), 'AS1_5per');
 save(fullfile(save_path, 'AS2_5per.mat'), 'AS2_5per');
 
 % Gamma도 저장
 save(fullfile(save_path, 'Gamma_unimodal.mat'), 'Gamma_unimodal');
 save(fullfile(save_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
-
-
 
 

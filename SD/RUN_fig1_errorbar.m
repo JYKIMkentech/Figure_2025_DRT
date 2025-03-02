@@ -41,10 +41,10 @@ legendPosC = [0.67 0.11 0.25 0.10];
 currentLabelOffsetX = +0.05;  
 voltageLabelOffsetX = -30;    
 
-%% (1) Load Data (4% Noise: Unimodal vs Bimodal)
+%% (1) Load Data (5% Noise: Unimodal vs Bimodal)
 data_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
-load(fullfile(data_path, 'AS1_4per_new.mat'), 'AS1_4per_new');  % Unimodal 4%
-load(fullfile(data_path, 'AS2_4per_new.mat'), 'AS2_4per_new');  % Bimodal 4%
+load(fullfile(data_path, 'AS1_5per_new.mat'), 'AS1_5per_new');  % Unimodal 5%
+load(fullfile(data_path, 'AS2_5per_new.mat'), 'AS2_5per_new');  % Bimodal 5%
 load(fullfile(data_path, 'Gamma_unimodal.mat'), 'Gamma_unimodal');
 load(fullfile(data_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
 
@@ -52,23 +52,23 @@ load(fullfile(data_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
 scenario_idx = 21;  
 
 %% ==================== (2) Extract data =======================
-% -- Unimodal (4% noise)
-theta_est_uni   = AS1_4per_new(scenario_idx).theta;
-gamma_avg_uni   = AS1_4per_new(scenario_idx).gamma_avg;
-gamma_lower_uni = AS1_4per_new(scenario_idx).gamma_lower;
-gamma_upper_uni = AS1_4per_new(scenario_idx).gamma_upper;
-time_uni        = AS1_4per_new(scenario_idx).t;
-curr_uni        = AS1_4per_new(scenario_idx).I;
-volt_uni        = AS1_4per_new(scenario_idx).V;
+% -- Unimodal (5% noise)
+theta_est_uni   = AS1_5per_new(scenario_idx).theta;
+gamma_avg_uni   = AS1_5per_new(scenario_idx).gamma_avg;
+gamma_lower_uni = AS1_5per_new(scenario_idx).gamma_lower;
+gamma_upper_uni = AS1_5per_new(scenario_idx).gamma_upper;
+time_uni        = AS1_5per_new(scenario_idx).t;
+curr_uni        = AS1_5per_new(scenario_idx).I;
+volt_uni        = AS1_5per_new(scenario_idx).V;
 
-% -- Bimodal (4% noise)
-theta_est_bi   = AS2_4per_new(scenario_idx).theta;
-gamma_avg_bi   = AS2_4per_new(scenario_idx).gamma_avg;
-gamma_lower_bi = AS2_4per_new(scenario_idx).gamma_lower;
-gamma_upper_bi = AS2_4per_new(scenario_idx).gamma_upper;
-time_bi        = AS2_4per_new(scenario_idx).t;
-curr_bi        = AS2_4per_new(scenario_idx).I;
-volt_bi        = AS2_4per_new(scenario_idx).V;
+% -- Bimodal (5% noise)
+theta_est_bi   = AS2_5per_new(scenario_idx).theta;
+gamma_avg_bi   = AS2_5per_new(scenario_idx).gamma_avg;
+gamma_lower_bi = AS2_5per_new(scenario_idx).gamma_lower;
+gamma_upper_bi = AS2_5per_new(scenario_idx).gamma_upper;
+time_bi        = AS2_5per_new(scenario_idx).t;
+curr_bi        = AS2_5per_new(scenario_idx).I;
+volt_bi        = AS2_5per_new(scenario_idx).V;
 
 % -- True gamma (Unimodal vs Bimodal)
 theta_true_uni = Gamma_unimodal.theta(:);
@@ -91,7 +91,7 @@ color_uni_volt = p_colors(3,:);  % 빨강 (Unimodal Voltage)
 color_bi_volt  = p_colors(4,:);  % 초록 (Bimodal Voltage)
 
 %% ==================== (4) Make Figure =======================
-figH = figure('Name','Unimodal vs. Bimodal (4% Noise)','NumberTitle','off', ...
+figH = figure('Name','Unimodal vs. Bimodal (5% Noise)','NumberTitle','off', ...
     'Units','centimeters', ...
     'Position',[3 3 figWidth figHeight], ...
     'PaperUnits','centimeters', ...
@@ -125,7 +125,7 @@ h_est_uni = errorbar(theta_est_uni, gamma_avg_uni, ...
     'MarkerEdgeColor', color_scenario, ...
     'Color', color_scenario, ...
     'LineWidth', lineWidthValue, ...
-    'DisplayName','Est. \gamma (4%)');
+    'DisplayName','Est. \gamma (5%)');
 
 xlabel('\theta','FontSize',axisFontSize);
 ylabel('\gamma [\Omega]','FontSize',axisFontSize);
@@ -250,7 +250,7 @@ annotation('textbox', ...
     'EdgeColor','none','Color','k');
 
 %% ================== (Optional) Figure 저장 =====================
-exportgraphics(gcf, 'Figure_Compare_4percent_typeC_n21.png','Resolution',300);
+exportgraphics(gcf, 'Figure_Compare_5percent_typeC_n21.png','Resolution',300);
 % 또는:
 % set(gcf,'PaperPositionMode','auto');
 % print(gcf,'-dpng','Figure_Compare_4percent_typeC_n21.png','-r300');
