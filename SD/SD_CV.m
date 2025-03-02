@@ -13,8 +13,8 @@ R0             = 0.1;
 
 %% =============== 데이터 로드 ===============
 save_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\';
-%file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\'; 
-file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_new\'; 
+file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_lambda\'; 
+%file_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_new\'; 
 mat_files = dir(fullfile(file_path, '*.mat'));
 
 if isempty(mat_files)
