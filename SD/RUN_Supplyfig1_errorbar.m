@@ -37,7 +37,7 @@ legendPosA = [0.60, 0.80, 0.25, 0.10];
 legendPosB = [0.60, 0.53, 0.25, 0.10];
 legendPosC = [0.60, 0.26, 0.25, 0.10];
 
-% ----- 색상 팔레트 정의 (교수님 지정, MATLAB Default 유사) -----
+% ----- 색상 팔레트 정의 (MATLAB Default 유사) -----
 p_colors = [
     0.00000, 0.44706, 0.74118;  % Blue
     0.93725, 0.75294, 0.00000;  % Yellow
@@ -155,6 +155,9 @@ for i = 1:numScenarios
     % 이미 legend에 추가된 타입 체크 (한 타입당 한 번만 DisplayName 표시)
     addedType = false(1, numel(typeGroup));
     
+    % 투명도 설정
+    alphaVal = 0.3;  % 0.3 => 30% 불투명, 70% 투명
+    
     for d = 1:numel(selData)
         tname       = selData(d).type;
         cidx        = find(strcmp(typeGroup, tname));   % 이 타입의 색상 인덱스
@@ -164,42 +167,44 @@ for i = 1:numScenarios
         gamma_upper = selData(d).gamma_upper;
         
         % (각 포인트별 에러바 범위)
-        err_lower = gamma_avg - gamma_lower;  % == gamma_avg - gamma_lower
-        err_upper = gamma_upper - gamma_avg;  % == gamma_upper - gamma_avg
-        gamma_lowVal  = gamma_lower;          % == gamma_avg - err_lower
-        gamma_highVal = gamma_upper;          % == gamma_avg + err_upper
+        err_lower = gamma_avg - gamma_lower;
+        err_upper = gamma_upper - gamma_avg;
+        
+        plotColor = [p_colors(cidx,:), alphaVal];  % [R G B Alpha]
 
-        % [R, G, B] 색상
-        plotColor = p_colors(cidx,:);
-
-        % ========== [1] 범례용 가짜 에러바(errorbar) ==========
-        %    - 한 타입 당 한 번만 NaN에러바를 그려 범례에 등록
+        % ========== [1] 마커(평균값) 먼저 플롯 ==========
         if ~addedType(cidx)
-            errorbar( NaN, NaN, NaN, 's', ...
-                'LineStyle',     '-', ...
-                'Color',         plotColor, ...
+            % 첫 등장 타입이면 legend에 표시
+            hMark = plot(theta_est, gamma_avg, 's', ...
+                'LineStyle','none', ...
+                'MarkerSize',   4, ...
                 'MarkerEdgeColor', plotColor, ...
                 'MarkerFaceColor', plotColor, ...
-                'CapSize',       4, ...  % 에러바 양 끝 캡 크기
-                'LineWidth',     1, ...
-                'DisplayName',   legendLabels{cidx});
+                'DisplayName',  legendLabels{cidx});
             addedType(cidx) = true;
+        else
+            % 이미 legend 등록된 타입이면 표시 안 함
+            hMark = plot(theta_est, gamma_avg, 's', ...
+                'LineStyle','none', ...
+                'MarkerSize',   4, ...
+                'MarkerEdgeColor', plotColor, ...
+                'MarkerFaceColor', plotColor, ...
+                'HandleVisibility','off');
         end
 
-        % ========== [2] 실제 데이터(마커) 그리기 ==========
-        plot(theta_est, gamma_avg, 's', ...
-            'LineStyle','none', ...
-            'MarkerSize',   4, ...
-            'MarkerEdgeColor', plotColor, ...
-            'MarkerFaceColor', plotColor, ...
-            'HandleVisibility','off');  % 범례 중복 방지
+        % ========== [2] 에러바(수직선) 그리기 ==========
+        % 실제로는 err_lower, err_upper를 써서 아래/위로 뻗어나가는 길이 계산
+        gamma_lowVal  = gamma_avg - err_lower;  % == gamma_lower
+        gamma_highVal = gamma_avg + err_upper;  % == gamma_upper
 
-        % ========== [3] 실제 데이터(에러바) 수직선 그리기 ==========
+        % 점 개수만큼 for문으로 세로선 그려도 되고, 
+        % 한번에 NaN으로 분리해서 그려도 되지만 여기서는 간단하게 for문
         for idxPoint = 1:length(theta_est)
             xVal = theta_est(idxPoint);
             yLow = gamma_lowVal(idxPoint);
             yHigh= gamma_highVal(idxPoint);
-
+            
+            % 수직선 플롯(캡은 생략)
             plot([xVal xVal], [yLow yHigh], '-', ...
                 'Color', plotColor, ...
                 'LineWidth', lineWidthValue, ...
@@ -240,6 +245,6 @@ for i = 1:numScenarios
     xlim([log(0.1), log(1000)]);
 end
 
-%% (Optional) 결과 저장
-% exportgraphics(gcf, ['Compare_',effectName,'_manualbars.png'],'Resolution',300);
+%% (Optional) 결과를 이미지 파일로 저장
+exportgraphics(gcf, ['Compare_',effectName,'_manualbars.png'],'Resolution',300);
 
