@@ -23,7 +23,8 @@ ocv_values = soc_ocv(:, 2);  % OCV
 n = 201;
 dur = 1370;       % [sec]
 SOC_begin = 0.9907;
-Q_batt = 2.7742;  % [Ah]
+Q_batt = 2.8153;  % [Ah]
+lambda_hat = 0.385;      % Hyperparameter for DRT (예시)
 
 %% 3. 각 trip에 대한 DRT 추정
 num_trips = length(udds_data);
@@ -41,8 +42,7 @@ for s = 1:num_trips-1
     t = udds_data(s).t;   
     I = udds_data(s).I;   
     V = udds_data(s).V;   
-    
-    lambda_hat = 3.79e-10;      % Hyperparameter for DRT (예시)
+ 
     dt = [t(1); diff(t)];  
     SOC = SOC_begin + cumtrapz(t, I) / (Q_batt * 3600); 
     SOC_all{s} = SOC;  
@@ -198,6 +198,8 @@ for s = special_trips
         warning(['Trip ' num2str(s) ' does not exist.']);
     end
 end
+
+
 
 %% (선택) 별도 결과 파일들도 저장 가능
 % -> 만약 이 부분도 유지하고 싶다면 그대로 두세요.

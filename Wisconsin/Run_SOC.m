@@ -433,6 +433,7 @@ for s = 1:num_trips-1
     residual_DRT_all_trips   = [residual_DRT_all_trips;   residual_DRT_all];
 
     % ============== 구조체에 SOC 결과 추가 ==============
+    udds_data_soc_results(s).True_SOC = True_SOC;
     udds_data_soc_results(s).CC_SOC  = CC_SOC;      % Coulomb-Counting 결과
     udds_data_soc_results(s).SOC_1RC = SOC_est_1RC; % 1RC-KF 결과
     udds_data_soc_results(s).SOC_2RC = SOC_est_2RC; % 2RC-KF 결과
