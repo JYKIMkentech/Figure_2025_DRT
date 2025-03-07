@@ -127,7 +127,7 @@ h_est_uni = errorbar(theta_est_uni, gamma_avg_uni, ...
     'LineWidth', lineWidthValue, ...
     'DisplayName','Est. \gamma (4%)');
 
-xlabel('\theta','FontSize',axisFontSize);
+xlabel('\theta = ln(\tau [s])', 'FontSize', axisFontSize);
 ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax1,'XColor','k','YColor','k','Box','on');
 hold off;
@@ -166,7 +166,7 @@ h_est_bi = errorbar(theta_est_bi, gamma_avg_bi, ...
     'LineWidth', lineWidthValue, ...
     'DisplayName','Est. \gamma (4%)');
 
-xlabel('\theta','FontSize',axisFontSize);
+xlabel('\theta = ln(\tau [s])', 'FontSize', axisFontSize);
 ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax2,'XColor','k','YColor','k','Box','on');
 hold off;

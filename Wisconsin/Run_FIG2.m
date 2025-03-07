@@ -16,7 +16,7 @@ axisTickFontSize   = 6;   % 축 눈금 폰트 크기
 axisLabelFontSize  = 6;   % 축 라벨 폰트 크기
 legendFontSize     = 6;   % 범례 폰트 크기
 annotationFontSize = 9;   % (a),(b),(c) 라벨 폰트
-legendItemTokenSizeManual = [8, 6];  % 범례 심볼 크기(필요시)
+legendItemTokenSizeManual = [10, 6];  % 범례 심볼 크기(필요시)
 
 % 선 굵기
 lineWidthMeas = 1;
@@ -99,22 +99,22 @@ I       = udds_data_soc_results(trip_idx).I;
 yyaxis left
 % -- 실제 데이터: 투명도, 범례 숨김
 p1 = plot(t, V_meas, 'LineWidth', 0.2, ...
-    'Color', [p_colors(1,:) 0.5], 'LineStyle','-', ...
+    'Color', [p_colors(1,:) 0.7], 'LineStyle','-', ...
     'HandleVisibility','off');  
 hold on;
 % -- 범례용 더미 선
 p1_legend = plot(nan, nan, 'LineWidth', lineWidthMeas, ...
     'Color', p_colors(1,:), 'LineStyle','-', ...
-    'DisplayName', 'Meas. V');
+    'DisplayName', 'Meas.V');
 
 % -- 추정 데이터: 투명도, 범례 숨김
 p2 = plot(t, V_drt,  'LineWidth', 1,  ...
-    'Color', [p_colors(3,:) 0.3], 'LineStyle','--', ...
+    'Color', [p_colors(3,:) 0.9], 'LineStyle','--', ...
     'HandleVisibility','off');
 % -- 범례용 더미 선
 p2_legend = plot(nan, nan, 'LineWidth', lineWidthEst, ...
     'Color', p_colors(3,:), 'LineStyle','--', ...
-    'DisplayName', 'Est. V');
+    'DisplayName', 'Est.V');
 
 ylabel('Voltage [V]', 'FontSize', axisLabelFontSize);
 
@@ -124,18 +124,18 @@ p3 = plot(t, I, 'LineWidth', lineWidthCurr, ...
 ylabel('Current [A]', 'FontSize', axisLabelFontSize);
 
 % Current 축 범위 예시
-ylim([-25 48]);  
+ylim([-6 10]);  
 xlabel('Time [s]',    'FontSize', axisLabelFontSize);
 
 yyaxis left;  set(gca, 'YColor','k','XColor','k','FontSize',axisTickFontSize);
 yyaxis right; set(gca, 'YColor','k','XColor','k','FontSize',axisTickFontSize);
 
 % legend에는 범례용 더미 + 실제 Current만
-leg_a = legend([p1_legend p2_legend p3]);
-set(leg_a, 'Position', legendPosA, ...
+leg_a = legend([p1_legend p2_legend p3], 'Orientation','horizontal');
+set(leg_a, 'Box','off', ...
            'FontSize', legendFontSize, ...
-           'Box','off', ...
-           'ItemTokenSize', legendItemTokenSizeManual); 
+           'ItemTokenSize', legendItemTokenSizeManual, ...
+           'Position', [0.088 0.58 0.4 0.05]);  % <-- 필요시 이 좌표값 조정
 
 annotation('textbox', ...
    [pos(1,1)-0.06, pos(1,2)+pos(1,4)*1.11, 0.03, 0.03], ...

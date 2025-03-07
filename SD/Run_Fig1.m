@@ -128,7 +128,7 @@ h_true_uni = plot(theta_true_uni, gamma_true_uni, ...
     'Color', color_true, ...
     'DisplayName','True \gamma');
 
-xlabel('\theta','FontSize',axisFontSize);
+xlabel('\theta = ln(\tau [s])', 'FontSize', axisFontSize);
 ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax1,'XColor','k','YColor','k','Box','on');
 hold off;
@@ -167,7 +167,7 @@ h_true_bi = plot(theta_true_bi, gamma_true_bi, ...
     'Color', color_true, ...
     'DisplayName','True \gamma');
 
-xlabel('\theta','FontSize',axisFontSize);
+xlabel('\theta = ln(\tau [s])', 'FontSize', axisFontSize);
 ylabel('\gamma [\Omega]','FontSize',axisFontSize);
 set(ax2,'XColor','k','YColor','k','Box','on');
 hold off;
