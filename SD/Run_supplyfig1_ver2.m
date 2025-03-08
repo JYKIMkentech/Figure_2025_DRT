@@ -25,8 +25,6 @@ annotPos_i = [0.02, 0.90];
 
 % (j)~(l)은 필요한 경우 별도 지정
 annotPos_jkl = [0.02, 0.90];  % 일단 동일하게 사용
-% 필요시 (j), (k), (l) 각각 따로 선언 가능
-% annotPos_j = [...]; annotPos_k = [...]; annotPos_l = [...];
 
 % --------------------------
 %  (a)~(i) legend 위치
@@ -66,7 +64,7 @@ legendTokenManualList = {
     [30,18]  % (l)
 };
 
-%% === 1) PREPARE DATA =========================================================
+%% === 1) PREPARE DATA ========================================================
 dataFolder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
 dataFile   = 'AS1_4per_new.mat'; % Contains types A,B,C,D,E,F,G,H, etc.
 load(fullfile(dataFolder, dataFile),'AS1_4per_new');
@@ -116,6 +114,10 @@ figure('Name','CompareAll','Color','w','Units','centimeters',...
 
 tiledlayout(3,4,'TileSpacing',tileSpacingChoice,'Padding',tilePaddingChoice);
 
+% (b), (c), (d), (f), (g), (h), (j), (k), (l) 에서는
+% 레전드만 "라인+스퀘어" 표시, 실제 플롯은 "라인만" 표시
+subplotsMarkerLegend = {'(b)','(c)','(d)','(f)','(g)','(h)','(j)','(k)','(l)'};
+
 labelIdx = 1;  % subplotLabels 인덱스
 
 %% === 5) LOOP OVER ROWS (SCENARIOS) ==========================================
@@ -128,7 +130,7 @@ for iRow = 1:3
     ax1 = nexttile;
     hold(ax1,'on'); box(ax1,'on');
     ax1.FontSize = axisFontSize;
-    ax1.XColor = 'k'; 
+    ax1.XColor = 'k';
     ax1.YColor = 'k';
 
     % -- Real data from AS1_4per_new(sn).t, .I, .V --
@@ -207,10 +209,14 @@ for iRow = 1:3
     ax2 = nexttile;
     hold(ax2,'on'); box(ax2,'on');
     ax2.FontSize = axisFontSize;
-    ax2.XColor = 'k'; 
+    ax2.XColor = 'k';
     ax2.YColor = 'k';
 
-    % Filter data for typeGroup_dt + scenario=sn
+    thisLabel = subplotLabels{labelIdx};
+    % 이 서브플롯이 "레전드만 라인+마커"를 써야 하는지 여부
+    markerInLegendOnly = ismember(thisLabel, subplotsMarkerLegend);
+
+    % 시뮬레이션 데이터 필터: typeGroup_dt & scenario=sn
     matchIdx = false(size(AS_data));
     for k = 1:numel(AS_data)
         if ismember(AS_data(k).type, typeGroup_dt) && (AS_data(k).SN == sn)
@@ -228,24 +234,56 @@ for iRow = 1:3
         gamma_lower = selData(d).gamma_lower;
         gamma_upper = selData(d).gamma_upper;
 
+        % (1) UNC 영역 fill -- 실제 플롯용 (handle off)
         fill([theta_est; flipud(theta_est)], ...
              [gamma_lower; flipud(gamma_upper)], ...
              p_colors(cidx,:), 'FaceAlpha',fillAlpha,'EdgeColor','none',...
              'HandleVisibility','off');
 
+        % (2) 실제 평균 라인 -- 플롯에만 표시 (handle off)
+        plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
+             'Color', p_colors(cidx,:), 'HandleVisibility','off');
+
+        % (3) 레전드용 "더미" line+marker
         if ~addedType(cidx)
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color',p_colors(cidx,:),...
-                 'DisplayName',legendLabels_dt{cidx});
+            if markerInLegendOnly
+                % 레전드에만 라인+사각마커
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'Marker','s','MarkerFaceColor', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_dt{cidx});
+            else
+                % (a), (e), (i) 같은 경우는 그냥 라인(마커 없음)
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_dt{cidx});
+            end
             addedType(cidx) = true;
-        else
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color',p_colors(cidx,:), 'HandleVisibility','off');
         end
     end
-    fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
-         'DisplayName','UNC');
-    plot(theta_true, gamma_true, 'k-','LineWidth',1,'DisplayName','True');
+
+    % UNC 범례(회색 면)도 실제 fill은 이미 그렸으므로, 레전드 표시는 더미로
+    if markerInLegendOnly
+        % UNC도 사각마커로 하고 싶다면:
+        plot(NaN,NaN,'s','MarkerFaceColor',[0.5,0.5,0.5],'LineWidth',1,...
+            'DisplayName','UNC');
+    else
+        % 아니면 기존처럼 patch 모양으로 레전드에 표시하고 싶다면:
+        fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
+             'DisplayName','UNC');
+    end
+
+    % True 라인도 마찬가지로 실제 플롯 + 레전드 핸들 분리
+    % (1) 실제 라인
+    plot(theta_true, gamma_true, 'k-','LineWidth',1, 'HandleVisibility','off');
+    % (2) 레전드용 더미
+    if markerInLegendOnly
+        % True도 마커 표시하려면:
+        plot(NaN,NaN,'k-s','MarkerFaceColor','k','LineWidth',1,...
+             'DisplayName','True');
+    else
+        plot(NaN,NaN,'k-','LineWidth',1,'DisplayName','True');
+    end
 
     xlabel('$\theta = \ln(\tau\,[\mathrm{s}])$','Interpreter','latex',...
            'FontSize',axisFontSize,'Color','k');
@@ -255,7 +293,6 @@ for iRow = 1:3
     lgd2 = legend('Box','off','FontSize',legendFontSize);
     lgd2.ItemTokenSize = legendTokenManualList{labelIdx};
 
-    thisLabel = subplotLabels{labelIdx};
     switch thisLabel
         case '(a)'
             set(lgd2,'Location','none','Units','normalized','Position',legendPos_a);
@@ -306,8 +343,11 @@ for iRow = 1:3
     ax3 = nexttile;
     hold(ax3,'on'); box(ax3,'on');
     ax3.FontSize = axisFontSize;
-    ax3.XColor = 'k'; 
+    ax3.XColor = 'k';
     ax3.YColor = 'k';
+
+    thisLabel = subplotLabels{labelIdx};
+    markerInLegendOnly = ismember(thisLabel, subplotsMarkerLegend);
 
     matchIdx = false(size(AS_data));
     for k = 1:numel(AS_data)
@@ -331,19 +371,39 @@ for iRow = 1:3
              p_colors(cidx,:), 'FaceAlpha',fillAlpha,'EdgeColor','none',...
              'HandleVisibility','off');
 
+        plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
+             'Color', p_colors(cidx,:), 'HandleVisibility','off');
+
         if ~addedType(cidx)
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color',p_colors(cidx,:),...
-                 'DisplayName',legendLabels_dur{cidx});
+            if markerInLegendOnly
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'Marker','s','MarkerFaceColor', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_dur{cidx});
+            else
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_dur{cidx});
+            end
             addedType(cidx) = true;
-        else
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color',p_colors(cidx,:), 'HandleVisibility','off');
         end
     end
-    fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
-         'DisplayName','UNC');
-    plot(theta_true, gamma_true, 'k-','LineWidth',1,'DisplayName','True');
+
+    if markerInLegendOnly
+        plot(NaN,NaN,'s','MarkerFaceColor',[0.5,0.5,0.5],'LineWidth',1,...
+            'DisplayName','UNC');
+    else
+        fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
+             'DisplayName','UNC');
+    end
+    % True 라인
+    plot(theta_true, gamma_true, 'k-','LineWidth',1, 'HandleVisibility','off');
+    if markerInLegendOnly
+        plot(NaN,NaN,'k-s','MarkerFaceColor','k','LineWidth',1,...
+             'DisplayName','True');
+    else
+        plot(NaN,NaN,'k-','LineWidth',1,'DisplayName','True');
+    end
 
     xlabel('$\theta = \ln(\tau\,[\mathrm{s}])$','Interpreter','latex',...
            'FontSize',axisFontSize,'Color','k');
@@ -353,7 +413,6 @@ for iRow = 1:3
     lgd3 = legend('Box','off','FontSize',legendFontSize);
     lgd3.ItemTokenSize = legendTokenManualList{labelIdx};
 
-    thisLabel = subplotLabels{labelIdx};
     switch thisLabel
         case '(a)'
             set(lgd3,'Location','none','Units','normalized','Position',legendPos_a);
@@ -404,8 +463,11 @@ for iRow = 1:3
     ax4 = nexttile;
     hold(ax4,'on'); box(ax4,'on');
     ax4.FontSize = axisFontSize;
-    ax4.XColor = 'k'; 
+    ax4.XColor = 'k';
     ax4.YColor = 'k';
+
+    thisLabel = subplotLabels{labelIdx};
+    markerInLegendOnly = ismember(thisLabel, subplotsMarkerLegend);
 
     matchIdx = false(size(AS_data));
     for k = 1:numel(AS_data)
@@ -429,19 +491,38 @@ for iRow = 1:3
              p_colors(cidx,:), 'FaceAlpha',fillAlpha,'EdgeColor','none',...
              'HandleVisibility','off');
 
+        plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
+             'Color', p_colors(cidx,:), 'HandleVisibility','off');
+
         if ~addedType(cidx)
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color', p_colors(cidx,:),...
-                 'DisplayName',legendLabels_N{cidx});
+            if markerInLegendOnly
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'Marker','s','MarkerFaceColor', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_N{cidx});
+            else
+                plot(NaN, NaN, 'LineWidth',lineWidthValue,...
+                     'Color', p_colors(cidx,:), ...
+                     'DisplayName', legendLabels_N{cidx});
+            end
             addedType(cidx) = true;
-        else
-            plot(theta_est, gamma_avg, 'LineWidth',lineWidthValue,...
-                 'Color', p_colors(cidx,:), 'HandleVisibility','off');
         end
     end
-    fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
-         'DisplayName','UNC');
-    plot(theta_true, gamma_true, 'k-','LineWidth',1,'DisplayName','True');
+
+    if markerInLegendOnly
+        plot(NaN,NaN,'s','MarkerFaceColor',[0.5,0.5,0.5],'LineWidth',1,...
+            'DisplayName','UNC');
+    else
+        fill(NaN,NaN,[0.5,0.5,0.5],'FaceAlpha',fillAlpha,'EdgeColor','none',...
+             'DisplayName','UNC');
+    end
+    plot(theta_true, gamma_true, 'k-','LineWidth',1, 'HandleVisibility','off');
+    if markerInLegendOnly
+        plot(NaN,NaN,'k-s','MarkerFaceColor','k','LineWidth',1,...
+             'DisplayName','True');
+    else
+        plot(NaN,NaN,'k-','LineWidth',1,'DisplayName','True');
+    end
 
     xlabel('$\theta = \ln(\tau\,[\mathrm{s}])$','Interpreter','latex',...
            'FontSize',axisFontSize,'Color','k');
@@ -451,7 +532,6 @@ for iRow = 1:3
     lgd4 = legend('Box','off','FontSize',legendFontSize);
     lgd4.ItemTokenSize = legendTokenManualList{labelIdx};
 
-    thisLabel = subplotLabels{labelIdx};
     switch thisLabel
         case '(a)'
             set(lgd4,'Location','none','Units','normalized','Position',legendPos_a);
