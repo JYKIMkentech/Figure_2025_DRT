@@ -124,7 +124,7 @@ p3 = plot(t, I, 'LineWidth', lineWidthCurr, ...
 ylabel('Current [A]', 'FontSize', axisLabelFontSize);
 
 % Current 축 범위 예시
-ylim([-6 10]);  
+ylim([-6 12]);  
 xlabel('Time [s]',    'FontSize', axisLabelFontSize);
 
 yyaxis left;  set(gca, 'YColor','k','XColor','k','FontSize',axisTickFontSize);

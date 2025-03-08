@@ -42,6 +42,7 @@ currentLabelOffsetX = +0.05;
 voltageLabelOffsetX = -30;    
 
 %% (1) Load Data (5% Noise: Unimodal vs Bimodal)
+% (사용하시는 데이터 경로와 파일 이름은 예시입니다.)
 data_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
 load(fullfile(data_path, 'AS1_4per_new.mat'), 'AS1_4per_new');  % Unimodal 5%
 load(fullfile(data_path, 'AS2_4per_new.mat'), 'AS2_4per_new');  % Bimodal 5%
@@ -77,13 +78,26 @@ gamma_true_uni = Gamma_unimodal.gamma(:);
 theta_true_bi = Gamma_bimodal.theta(:);
 gamma_true_bi = Gamma_bimodal.gamma(:);
 
-%% ==================== (3) Color table =======================
-p_colors = [
+%% ==================== (3) Color table (연하게 수정) =======================
+% 기존 색상에서 lightenFactor만큼 더 밝게 만듭니다.
+lightenFactor = 0.3;  % 0.3 정도면 기존 대비 꽤 연해집니다.
+% lighten 함수
+lighten = @(c, f) c + f * (1 - c);
+
+original_colors = [
     0.00000, 0.45098, 0.76078;  % #1 (Blue)
     0.93725, 0.75294, 0.00000;  % #2 (Yellow)
     0.80392, 0.32549, 0.29803;  % #3 (Red)
     0.12549, 0.52157, 0.30588;  % #4 (Green)
 ];
+
+% 각 행에 대해 lighten 함수 적용
+p_colors = zeros(size(original_colors));
+for i = 1:size(original_colors,1)
+    p_colors(i,:) = lighten(original_colors(i,:), lightenFactor);
+end
+
+% 이제 p_colors는 기존보다 연해진 색.
 color_scenario = p_colors(2,:);  % 노랑 (Estimated gamma)
 color_true     = [0 0 0];        % 검정 (True gamma)
 color_curr     = p_colors(1,:);  % 파랑 (Current)
@@ -184,8 +198,6 @@ lgdB.ItemTokenSize = [legendTokenSize, legendTokenSize];
 %% ------------------------------------------------------------------------
 ax3 = subplot('Position', pos_ax3);
 
-% time_uni, time_bi가 동일하다고 가정 (다를 경우 보간 필요)
-
 yyaxis left
 h_curr = plot(time_uni, curr_uni, ...
     'LineWidth', lineWidthValue, 'LineStyle','-', ...
@@ -250,7 +262,7 @@ annotation('textbox', ...
     'EdgeColor','none','Color','k');
 
 %% ================== (Optional) Figure 저장 =====================
-exportgraphics(gcf, 'Figure_Compare_4percent_typeC_n211.png','Resolution',300);
+exportgraphics(gcf, 'Figure_Compare_4percent_typeC_n21.png','Resolution',300);
 % 또는:
 % set(gcf,'PaperPositionMode','auto');
 % print(gcf,'-dpng','Figure_Compare_4percent_typeC_n21.png','-r300');
