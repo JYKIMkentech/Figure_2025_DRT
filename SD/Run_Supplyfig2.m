@@ -11,30 +11,30 @@ tileSpacingChoice = 'compact';
 tilePaddingChoice = 'compact';  
 
 % 서브플롯 (a)~(l) annotation 위치
-annotPos_a = [-0.22, 1.05];
-annotPos_b = [-0.22, 1.05];
-annotPos_c = [-0.22, 1.05];
-annotPos_d = [-0.22, 1.05];
-annotPos_e = [-0.22, 1.05];
-annotPos_f = [-0.22, 1.05];
-annotPos_g = [-0.22, 1.05];
-annotPos_h = [-0.22, 1.05];
-annotPos_i = [-0.22, 1.05];
-annotPos_jkl = [-0.22, 1.05];  
+annotPos_a = [-0.2, 1.05];
+annotPos_b = [-0.2, 1.05];
+annotPos_c = [-0.2, 1.05];
+annotPos_d = [-0.2, 1.05];
+annotPos_e = [-0.2, 1.05];
+annotPos_f = [-0.2, 1.05];
+annotPos_g = [-0.2, 1.05];
+annotPos_h = [-0.2, 1.05];
+annotPos_i = [-0.2, 1.05];
+annotPos_jkl = [-0.2, 1.05];  % (j,k,l)은 동일하게
 
 % Legend 위치
 legendPos_a = [0.02, 0.68, 0.3, 0.08];
-legendPos_b = [0.29, 0.88, 0.3, 0.08];
-legendPos_c = [0.53, 0.88, 0.3, 0.08];
-legendPos_d = [0.77, 0.88, 0.3, 0.08];
+legendPos_b = [0.185, 0.88, 0.3, 0.08];
+legendPos_c = [0.43, 0.88, 0.3, 0.08];
+legendPos_d = [0.665, 0.88, 0.3, 0.08];
 legendPos_e = [0.02, 0.355, 0.3, 0.08];
-legendPos_f = [0.29, 0.55, 0.3, 0.08];
-legendPos_g = [0.53, 0.55, 0.3, 0.08];
-legendPos_h = [0.77, 0.55, 0.3, 0.08];
+legendPos_f = [0.185, 0.55, 0.3, 0.08];
+legendPos_g = [0.43, 0.55, 0.3, 0.08];
+legendPos_h = [0.665, 0.55, 0.3, 0.08];
 legendPos_i = [0.02, 0.03, 0.3, 0.08];
-legendPos_j = [0.29, 0.23, 0.3, 0.08];
-legendPos_k = [0.53, 0.23, 0.3, 0.08];
-legendPos_l = [0.77, 0.23, 0.3, 0.08];
+legendPos_j = [0.185, 0.23, 0.3, 0.08];
+legendPos_k = [0.43, 0.23, 0.3, 0.08];
+legendPos_l = [0.665, 0.23, 0.3, 0.08];
 
 % Legend ItemTokenSize 설정
 legendTokenManualList = {
@@ -57,15 +57,15 @@ legendAlpha = 0.7;  % 0이면 완전투명, 1이면 불투명
 
 %% === 1) PREPARE DATA ========================================================
 dataFolder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
-dataFile   = 'AS1_4per_new.mat';
-load(fullfile(dataFolder, dataFile),'AS1_4per_new');
-AS_data = AS1_4per_new;  % shorter name
+dataFile   = 'AS2_4per_new.mat';    % <-- AS2_4per_new 사용
+load(fullfile(dataFolder, dataFile),'AS2_4per_new');
+AS_data = AS2_4per_new;  % shorter name
 
-% True gamma
-trueFile = 'Gamma_unimodal.mat';
+% True gamma (bimodal)
+trueFile = 'Gamma_bimodal.mat';     % <-- bimodal 가정
 tmp_true = load(fullfile(dataFolder, trueFile));
-theta_true = tmp_true.Gamma_unimodal.theta;
-gamma_true = tmp_true.Gamma_unimodal.gamma;
+theta_true = tmp_true.Gamma_bimodal.theta;
+gamma_true = tmp_true.Gamma_bimodal.gamma;
 
 %% === 2) STYLING PARAMETERS ==================================================
 lineWidthValue     = 1;
@@ -86,7 +86,7 @@ subplotLabels = {'(a)','(b)','(c)','(d)','(e)','(f)', ...
                  '(g)','(h)','(i)','(j)','(k)','(l)'};
 
 %% === 3) SCENARIOS & TYPE-GROUPS =============================================
-scenarioList = [1, 5, 10]; % 3 scenarios
+scenarioList = [1, 5, 10]; % 3 scenarios (원하는 시나리오 인덱스로 수정 가능)
 
 typeGroup_dt    = {'A','D','E','F'};
 legendLabels_dt = {'dt=0.1','dt=0.2','dt=1','dt=2'};
@@ -98,11 +98,13 @@ typeGroup_N    = {'A','B','C'};
 legendLabels_N = {'N=201','N=101','N=21'};
 
 %% === 4) MAKE A 3×4 FIGURE LAYOUT ============================================
-figure('Name','CompareAll','Color','w','Units','centimeters',...
+figure('Name','CompareAll_AS2','Color','w','Units','centimeters',...
        'Position',[figPosX_cm figPosY_cm figWidth_cm figHeight_cm]);
 
 tiledlayout(3,4,'TileSpacing',tileSpacingChoice,'Padding',tilePaddingChoice);
 
+% (b), (c), (d), ... 등에서만 Marker를 Legend로 빼서 보여주고 싶으면
+% 아래 리스트를 사용 (원 코드와 동일하게 유지)
 subplotsMarkerLegend = {'(b)','(c)','(d)','(f)','(g)','(h)','(j)','(k)','(l)'};
 labelIdx = 1;
 
@@ -137,6 +139,8 @@ for iRow = 1:3
     ylabel('Voltage (V)','FontSize',axisFontSize,'Color','k');
 
     xlabel('Time (s)','FontSize',axisFontSize,'Color','k');
+
+    ylim([-10 10]);
 
     lgd = legend([h1,h2],{'Current','Voltage'}, ...
            'FontSize',legendFontSize,'Orientation','horizontal','Box','off');
@@ -543,7 +547,4 @@ for iRow = 1:3
 end
 
 %% === 6) OPTIONAL: SAVE FIGURE ===============================================
-exportgraphics(gcf,'CompareAll_3x4.png','Resolution',300);
-
-
-
+exportgraphics(gcf,'CompareAll_AS2_3x4.png','Resolution',300);
