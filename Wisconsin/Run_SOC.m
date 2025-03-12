@@ -602,8 +602,7 @@ title('Markov State');
 grid on;
 
 
-save('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat', ...
-     'udds_data_soc_results');
+%save('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat','udds_data_soc_results'); 
 
 %%%%%========================================================
 %%%%%   (부록) Markov 노이즈 생성 함수
