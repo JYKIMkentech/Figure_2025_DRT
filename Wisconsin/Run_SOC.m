@@ -33,8 +33,9 @@ rng(208);
 load('optimized_params_struct_final_2RC.mat');  % Fields: R0, R1, C1, R2, C2, SOC, avgI, m, Crate
 
 % DRT parameters (gamma and tau values)
-load('theta_discrete.mat');       
-load('gamma_est_all.mat', 'gamma_est_all');  % Note: Removed SOC_mid_all
+load('theta_discrete.mat');
+load('gamma_est_all.mat', 'gamma_est_all');  % (이전) 단일 추정 gamma
+load('gamma_avg_all.mat', 'gamma_avg_all');  % (새로) 부트스트랩 평균 gamma
 load('R0_est_all.mat');
 tau_discrete = exp(theta_discrete);          % tau values
 
@@ -145,10 +146,10 @@ initial_P_estimate_DRT   = Pcov3_init;
 initial_SOC_estimate_DRT = initial_SOC_cc;
 initial_V_estimate_DRT   = zeros(num_RC, 1);
 
-x_pred_DRT_all_trips      = [];
-x_estimate_DRT_all_trips  = [];
-KG_DRT_all_trips          = [];
-residual_DRT_all_trips    = [];
+x_pred_DRT_all_trips     = [];
+x_estimate_DRT_all_trips = [];
+KG_DRT_all_trips         = [];
+residual_DRT_all_trips   = [];
 
 previous_trip_end_time = 0;
 initial_markov_state  = 50;   % Markov 잡음 초기 상태 (예시)
@@ -187,7 +188,7 @@ for s = 1:num_trips-1
 
     SOC_estimate_1RC = initial_SOC_estimate_1RC;
     P_estimate_1RC   = initial_P_estimate_1RC;
-    V1_estimate_1RC  = initial_V1_estimate_1RC;
+    V1_estimate_1RC  = 0;
 
     x_pred_1RC_all     = zeros(length(t), 2);
     KG_1RC_all         = zeros(length(t), 2);
@@ -210,9 +211,12 @@ for s = 1:num_trips-1
     residual_2RC_all   = zeros(length(t), 1);
 
     % ============== DRT ==============
-    gamma      = gamma_est_all(s,:);
+    % ---------------------------------------------------------
+    % Changed here to use the *averaged* gamma (gamma_avg_all):
+    % ---------------------------------------------------------
+    gamma      = gamma_avg_all(s,:);      % <-- use gamma_avg_all
     delta_theta = theta_discrete(2) - theta_discrete(1);
-    R_i = gamma * delta_theta;              % 각 이산화된 freq bin에 대한 R
+    R_i = gamma * delta_theta;            % 각 이산화된 freq bin에 대한 R
     C_i = tau_discrete' ./ R_i;
 
     SOC_est_DRT = zeros(length(t), 1);
@@ -238,7 +242,6 @@ for s = 1:num_trips-1
             if s == 1
                 V1_pred = noisy_I(k) * R1_1RC * (1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
             else
-                % 두 번째 트립부터는 이전 값 이어서
                 V1_pred = V1_estimate_1RC * exp(-dt(k)/(R1_1RC*C1_1RC)) ...
                           + noisy_I(k)*R1_1RC*(1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
             end
@@ -252,18 +255,15 @@ for s = 1:num_trips-1
         x_pred = [SOC_pred_1RC; V1_pred];
         x_pred_1RC_all(k, :) = x_pred';
 
-        % 예측 공분산
         A = [1, 0;
              0, exp(-dt(k)/(R1_1RC*C1_1RC))];
         P_pred_1RC = A * P_estimate_1RC * A' + Qcov1;
 
-        % OCV 및 미분
         OCV_pred   = interp1(unique_soc, unique_ocv, SOC_pred_1RC, 'linear', 'extrap');
         dOCV_dSOC  = interp1(unique_soc, dOCV_dSOC_values_smooth, SOC_pred_1RC, 'linear', 'extrap');
         H          = [dOCV_dSOC, 1];
         V_pred_total = OCV_pred + V1_pred + R0_1RC*noisy_I(k);
 
-        % 보정 단계
         S_k      = H * P_pred_1RC * H' + Rcov1;
         KG_1RC   = (P_pred_1RC * H') / S_k;
         KG_1RC_all(k, :) = KG_1RC';
@@ -273,11 +273,10 @@ for s = 1:num_trips-1
         residual_1RC_all(k) = residual;
 
         x_estimate = x_pred + KG_1RC * residual;
-
         SOC_estimate_1RC = x_estimate(1);
         V1_estimate_1RC  = x_estimate(2);
-        x_estimate_1RC_all(k, :) = x_estimate';
 
+        x_estimate_1RC_all(k, :) = x_estimate';
         P_estimate_1RC = (eye(2) - KG_1RC*H) * P_pred_1RC;
 
         SOC_est_1RC(k) = x_estimate(1);
@@ -601,8 +600,8 @@ xlabel('Time [s]'); ylabel('State Index');
 title('Markov State');
 grid on;
 
-
-%save('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat','udds_data_soc_results'); 
+% (Optional) 저장 예시:
+save('udds_data_soc_results.mat','udds_data_soc_results');
 
 %%%%%========================================================
 %%%%%   (부록) Markov 노이즈 생성 함수
@@ -635,9 +634,4 @@ function [noisy_I, states, final_state, P] = Markov(I, epsilon_percent_span, ini
 
     final_state = states(end);
 end
-
-%% ======================================================
-%  필요한 계산/플롯 마무리 후, 구조체 저장
-%  지정된 경로와 파일명에 맞추어 저장합니다.
-%% ======================================================
 
