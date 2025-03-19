@@ -56,7 +56,7 @@ load('udds_data.mat','udds_data');    % 기존 struct array 이름: udds_data
 udds_data_soc_results = udds_data;    % 새 구조체 이름으로 복사해둠
 
 %% 배터리 기본 설정
-Q_batt = 2.8153;         % [Ah]
+Q_batt = 2.6;         % [Ah]
 SOC_begin_true = 0.9907;
 SOC_begin_cc   = 0.9907;
 epsilon_percent_span = 4;         % ex) 0.02 --> 4

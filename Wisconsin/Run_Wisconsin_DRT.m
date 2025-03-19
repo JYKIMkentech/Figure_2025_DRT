@@ -23,7 +23,7 @@ ocv_values = soc_ocv(:, 2);  % OCV
 n = 201;
 dur = 1370;       % [sec]
 SOC_begin = 0.9907;
-Q_batt = 2.8153;  % [Ah]
+Q_batt = 2.6 ; % [Ah]
 lambda_hat = 0.385;      % Hyperparameter for DRT (예시)
 
 %% 3. 각 trip에 대한 DRT 추정
@@ -35,7 +35,7 @@ V_est_all = cell(num_trips, 1);
 SOC_all = cell(num_trips, 1);   
 SOC_mid_all = zeros(num_trips,1);
 
-for s = 1:num_trips-1
+for s = 1:num_trips-4
     fprintf('Processing Trip %d/%d...\n', s, num_trips);
     
     Time_duration = udds_data(s).Time_duration;
@@ -88,6 +88,8 @@ for s = 1:num_trips-1
     title(sprintf('Trip %d: Voltage and Current', s), 'FontSize', titleFontSize);
     legend('FontSize', legendFontSize);
     set(gca, 'FontSize', axisFontSize);
+    xlim([0 100])
+
     hold off;
 
     % 두 번째 subplot: DRT (theta vs gamma)
