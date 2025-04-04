@@ -113,7 +113,7 @@ num_trips = length(udds_data_soc_results);
 % (a) Trip #5
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot('Position', pos(1,:)); box on;  % box on
-trip_idx = 5;
+trip_idx = 1;
 t      = udds_data_soc_results(trip_idx).t;
 V_meas = udds_data_soc_results(trip_idx).V;
 V_drt  = udds_data_soc_results(trip_idx).V_est;
@@ -127,11 +127,11 @@ h2 = plot(t, V_drt, 'LineWidth', lineWidthEst,...
     'Color', p_colors(3,:),'LineStyle','--','DisplayName','Est.V');
 ylabel('Voltage [V]','FontSize', axisLabelFontSize);
 
-ylim([3.8 4.01]); 
-yticks(3.8:0.1:4.01);
+%ylim([3.8 4.01]); 
+%yticks(3.8:0.1:4.01);
 
-% ylim([4 4.21]); 
-% yticks(4:0.1:4.21);
+ ylim([4 4.21]); 
+ yticks(4:0.1:4.21);
 
 yyaxis right
 h3 = plot(t, I, 'LineWidth', lineWidthCurr,...

@@ -32,7 +32,7 @@ Q_batt_grids = linspace(2.5, 3.1, 20);
 
 %% 3. RMSE 계산
 num_trips = length(udds_data);   % 전체 트립 수 (17로 가정)
-num_used_trips = 13;            % 실제 사용할 트립 수 (1~13)
+num_used_trips = 11;            % 실제 사용할 트립 수 (1~13)
 
 RMSE = zeros(1, length(Q_batt_grids));
 
@@ -44,7 +44,7 @@ for Q_index = 1:length(Q_batt_grids)
     SOC_begin = SOC_begin_initial;
     
     % 1~13번 트립만 사용
-    for s = 1:num_trips - 3
+    for s = 1:num_used_trips
         % 해당 트립의 시간, 전류, 전압
         t = udds_data(s).t;    % 시간 벡터 [s]
         I = udds_data(s).I;    % 전류 벡터 [A]
@@ -83,7 +83,7 @@ plot(opt_Q_batt, min_RMSE, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
 
 xlabel('Q_{batt} [Ah]', 'FontSize', labelFontSize);
 ylabel('Total RMSE Voltage [V]', 'FontSize', labelFontSize);
-title('RMSE vs. Q_{batt} (Trip 1~13, \lambda = 0.385)', 'FontSize', titleFontSize);
+title('RMSE vs. Q_{batt} (Trip 1~11, \lambda = 0.385)', 'FontSize', titleFontSize);
 legend(sprintf('Q_{batt} grid'), sprintf('Min RMSE at Q=%.4f Ah', opt_Q_batt), ...
        'Location', 'best');
 grid on;

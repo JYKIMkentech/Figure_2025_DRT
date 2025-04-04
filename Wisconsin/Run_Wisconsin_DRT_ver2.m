@@ -33,7 +33,7 @@ ocv_values = soc_ocv(:,2);
 n          = 201;     % RC 소자(또는 tau grid) 개수
 dur        = 1370;    % tau_max [sec]
 SOC_begin  = 0.9907;  
-Q_batt     = 2.6; %2.7153;  % [Ah]
+Q_batt     = 2.6895; %2.7153;  % [Ah]
 lambda_hat = 0.385;   % DRT 정칙화 하이퍼파라미터
 num_bs     = 500;     % 부트스트랩 반복 횟수
 
