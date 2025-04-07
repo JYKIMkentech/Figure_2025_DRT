@@ -24,7 +24,7 @@ ocv_values = soc_ocv(:, 2);  % OCV 값
 n = 201;
 dur = 1370; % [sec]
 SOC_begin = 0.9907 ; % 0.9907;
-Q_batt = 2.8153; % [Ah]
+Q_batt = 2.633; % [Ah]
 
 lambda_grids = logspace(-7, 3, 30);  
 num_lambdas = length(lambda_grids);
@@ -42,7 +42,7 @@ end
 
 %% 4. Cross-Validation loop
 
-validation_combinations = nchoosek(1 : length(udds_data)-1, 2); % 마지막 17번째 data 시간 부족으로 CV 참여 x
+validation_combinations = nchoosek(1 : length(udds_data)-6, 2); % 마지막 17번째 data 시간 부족으로 CV 참여 x
 num_folds = size(validation_combinations, 1);
 CVE_total = zeros(num_lambdas, 1);
 
@@ -52,7 +52,7 @@ for m = 1 : num_lambdas  % 모든 lamda에 대해서 loop
     
     for f = 1 : num_folds % 1개 lambda에 대해, 전체 folds 에 대해서 loop
         val_trips = validation_combinations(f,:);
-        train_trips = setdiff(1 : length(udds_data)-1, val_trips) ;
+        train_trips = setdiff(1 : length(udds_data)-6, val_trips) ;
 
         W_total = [];
         y_total = [];
