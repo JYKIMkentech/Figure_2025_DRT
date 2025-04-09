@@ -26,7 +26,7 @@ dur = 1370; % [sec]
 SOC_begin = 0.9907 ; % 0.9907;
 Q_batt = 2.633; % [Ah]
 
-lambda_grids = logspace(-7, 3, 30);  
+lambda_grids = logspace(-6, 3, 20);  
 num_lambdas = length(lambda_grids);
 
 %% 3. 전체 trip에 대해 SOC 계산 --> OCV update 할때 필요
@@ -107,7 +107,7 @@ xlabel('\lambda', 'FontSize', labelFontSize);
 ylabel('CVE', 'FontSize', labelFontSize);
 title('CVE vs \lambda ', 'FontSize', titleFontSize);
 legend({'CVE', ['Optimal \lambda = ', num2str(optimal_lambda, '%.2e')]}, 'Location', 'best');
-%ylim([649.1 649.2])
+%ylim([80.793 80.8])
 hold off;
 
 % Combine results into a struct

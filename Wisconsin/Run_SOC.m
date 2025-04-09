@@ -18,12 +18,12 @@ labelFontSize  = 14;
 % 9:  [0.49412  0.38039  0.28235]
 % 10: [0.45490  0.46275  0.47059]
 
-%% 3) 적용할 컬러 정의(예시)
+%% 3) 적용할 컬러 정의
 color_true = [0, 0, 0];                          % True SOC: 검정
 color_cc   = [0.0000, 0.45098, 0.76078];         % #1
-color_1rc  = [0.12549  0.52157  0.30588];        % #3
-color_2rc  = [0.80392, 0.32549, 0.29803];        % #2
-color_drt  = [0.93725, 0.75294, 0.00000];        % #5
+color_1rc  = [0.12549  0.52157  0.30588];        % #4
+color_2rc  = [0.80392, 0.32549, 0.29803];        % #3
+color_drt  = [0.93725, 0.75294, 0.00000];        % #2
 
 %% 4) Seed Setting
 rng(208);
@@ -34,32 +34,35 @@ load('optimized_params_struct_final_2RC.mat');  % Fields: R0, R1, C1, R2, C2, SO
 
 % DRT parameters (gamma and tau values)
 load('theta_discrete.mat');
-load('gamma_est_all.mat', 'gamma_est_all');  % (이전) 단일 추정 gamma
+load('gamma_est_all.mat', 'gamma_est_all');  % (예전) 단일 추정 gamma
 load('gamma_avg_all.mat', 'gamma_avg_all');  % (새로) 부트스트랩 평균 gamma
 load('R0_est_all.mat');
-tau_discrete = exp(theta_discrete);          % tau values
+
+% **tau_discrete를 열벡터로 변환**(중요!)
+tau_discrete = exp(theta_discrete(:));  % (num_RC x 1)
+num_RC = length(tau_discrete);
 
 % SOC-OCV lookup table (from C/20 test)
 load('soc_ocv.mat', 'soc_ocv');  % [SOC, OCV]
 soc_values = soc_ocv(:, 1);      % SOC values
-ocv_values = soc_ocv(:, 2);      % Corresponding OCV values [V]
+ocv_values = soc_ocv(:, 2);      % OCV values [V]
 [unique_ocv, b] = unique(ocv_values);
 unique_soc = soc_values(b);
 
-% Compute the derivative of OCV with respect to SOC
+% Compute the derivative of OCV w.r.t. SOC
 dOCV_dSOC_values = gradient(unique_ocv) ./ gradient(unique_soc);
 windowSize = 10;
 dOCV_dSOC_values_smooth = movmean(dOCV_dSOC_values, windowSize);
 
 % UDDS data
-load('udds_data.mat','udds_data');    % 기존 struct array 이름: udds_data
-udds_data_soc_results = udds_data;    % 새 구조체 이름으로 복사해둠
+load('udds_data.mat','udds_data');    
+udds_data_soc_results = udds_data;    
 
 %% 배터리 기본 설정
-Q_batt = 2.6;         % [Ah]
+Q_batt = 2.633;         % [Ah]
 SOC_begin_true = 0.9907;
 SOC_begin_cc   = 0.9907;
-epsilon_percent_span = 4;         % ex) 0.02 --> 4
+epsilon_percent_span = 4;         
 voltage_noise_percent = 0.01;     % 전압에 가우시안 잡음 비율
 
 %% 6) Kalman 필터에서 사용할 초기 Covariance 및 파라미터 설정
@@ -67,18 +70,14 @@ Voltage_cov = logspace(-4,-20,17);
 soc_cov = 0.2e-12;
 V_cov   = 1e-8; % Voltage_cov(1);
 
-% Number of RC elements for DRT model
-num_RC = length(tau_discrete);
-
 % 초기 P행렬
 Pcov1_init = [soc_cov/50, 0;
               0,         V_cov];
 Pcov2_init = [soc_cov/5,   0,       0;
               0,          V_cov/4,  0;
-              0,          0,        V_cov/4]; % [SOC; V1; V2]
-
+              0,          0,        V_cov/4]; 
 Pcov3_init = zeros(1 + num_RC);
-Pcov3_init(1,1) = 1 * soc_cov;
+Pcov3_init(1,1) = soc_cov;
 for i = 2:(1 + num_RC)
     Pcov3_init(i,i) = V_cov / (201^2);
 end
@@ -90,7 +89,7 @@ Qcov2 = [soc_cov/5,    0,          0;
          0,           V_cov/4,    0;
          0,           0,          V_cov/4];
 Qcov3 = zeros(1 + num_RC);
-Qcov3(1,1) = 1 * soc_cov;
+Qcov3(1,1) = soc_cov;
 for i = 2:(1 + num_RC)
     Qcov3(i,i) = V_cov / (201^2);
 end
@@ -126,7 +125,7 @@ x_pred_1RC_all_trips      = [];
 x_estimate_1RC_all_trips  = [];
 KG_1RC_all_trips          = [];
 residual_1RC_all_trips    = [];
-I_all     = [];
+I_all       = [];
 noisy_I_all = [];
 states_all  = [];
 
@@ -152,10 +151,10 @@ KG_DRT_all_trips         = [];
 residual_DRT_all_trips   = [];
 
 previous_trip_end_time = 0;
-initial_markov_state  = 50;   % Markov 잡음 초기 상태 (예시)
+initial_markov_state  = 50;   
 
 %% 9) 메인 루프 (각 Trip마다 반복)
-for s = 1:num_trips-1
+for s = 1:num_trips-6
     fprintf('Processing Trip %d/%d...\n', s, num_trips);
 
     t = udds_data_soc_results(s).Time_duration;
@@ -182,7 +181,9 @@ for s = 1:num_trips-1
     True_SOC = initial_SOC_true + cumtrapz(t - t(1), I)       / (3600 * Q_batt);
     CC_SOC   = initial_SOC_cc   + cumtrapz(t - t(1), noisy_I) / (3600 * Q_batt);
 
-    % ============== 1RC ==============
+    %---------------------------
+    % 1) 1RC 모델 준비
+    %---------------------------
     SOC_est_1RC = zeros(length(t), 1);
     V1_est_1RC  = zeros(length(t), 1);
 
@@ -195,7 +196,9 @@ for s = 1:num_trips-1
     residual_1RC_all   = zeros(length(t), 1);
     x_estimate_1RC_all = zeros(length(t), 2);
 
-    % ============== 2RC ==============
+    %---------------------------
+    % 2) 2RC 모델 준비
+    %---------------------------
     SOC_est_2RC = zeros(length(t), 1);
     V1_est_2RC  = zeros(length(t), 1);
     V2_est_2RC  = zeros(length(t), 1);
@@ -210,20 +213,21 @@ for s = 1:num_trips-1
     KG_2RC_all         = zeros(length(t), 3);
     residual_2RC_all   = zeros(length(t), 1);
 
-    % ============== DRT ==============
-    % ---------------------------------------------------------
-    % Changed here to use the *averaged* gamma (gamma_avg_all):
-    % ---------------------------------------------------------
-    gamma      = gamma_avg_all(s,:);      % <-- use gamma_avg_all
-    delta_theta = theta_discrete(2) - theta_discrete(1);
-    R_i = gamma * delta_theta;            % 각 이산화된 freq bin에 대한 R
-    C_i = tau_discrete' ./ R_i;
+    %---------------------------
+    % 3) DRT 모델 준비
+    %---------------------------
+    gamma_row = gamma_avg_all(s,:);  % (1 x num_RC)
+    gamma     = gamma_row(:);        % (num_RC x 1)
+
+    delta_theta = theta_discrete(2) - theta_discrete(1);  % 스칼라
+    R_i = gamma .* delta_theta;                            % (num_RC x 1)
+    C_i = tau_discrete ./ R_i;                             % (num_RC x 1)
 
     SOC_est_DRT = zeros(length(t), 1);
-    V_est_DRT   = zeros(length(t), num_RC);
+    V_est_DRT   = zeros(length(t), num_RC);  
 
     SOC_estimate_DRT = initial_SOC_estimate_DRT;
-    V_estimate_DRT   = initial_V_estimate_DRT;
+    V_estimate_DRT   = initial_V_estimate_DRT;  % (num_RC x 1)
     P_estimate_DRT   = initial_P_estimate_DRT;
 
     x_pred_DRT_all      = zeros(length(t), 1 + num_RC);
@@ -231,23 +235,20 @@ for s = 1:num_trips-1
     KG_DRT_all          = zeros(length(t), 1 + num_RC);
     residual_DRT_all    = zeros(length(t), 1);
 
-    %% 타임스텝 루프
+    %% ===== 타임스텝 루프 =====
     for k = 1:length(t)
-        %% (1) 1RC 예측 단계
+        %-------------------------------------------------------------
+        % 1) 1RC 예측
+        %-------------------------------------------------------------
         R0_1RC = interp1(SOC_params, R0_params, SOC_estimate_1RC, 'linear', 'extrap');
         R1_1RC = interp1(SOC_params, R1_params, SOC_estimate_1RC, 'linear', 'extrap');
         C1_1RC = interp1(SOC_params, C1_params, SOC_estimate_1RC, 'linear', 'extrap');
 
         if k == 1
-            if s == 1
-                V1_pred = noisy_I(k) * R1_1RC * (1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
-            else
-                V1_pred = V1_estimate_1RC * exp(-dt(k)/(R1_1RC*C1_1RC)) ...
-                          + noisy_I(k)*R1_1RC*(1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
-            end
+            V1_pred = 0;
         else
             V1_pred = V1_estimate_1RC * exp(-dt(k)/(R1_1RC*C1_1RC)) ...
-                      + noisy_I(k)*R1_1RC*(1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
+                      + noisy_I(k-1)*R1_1RC*(1 - exp(-dt(k)/(R1_1RC*C1_1RC)));
         end
 
         SOC_pred_1RC = SOC_estimate_1RC + (dt(k)/(Q_batt*3600))*noisy_I(k);
@@ -264,8 +265,8 @@ for s = 1:num_trips-1
         H          = [dOCV_dSOC, 1];
         V_pred_total = OCV_pred + V1_pred + R0_1RC*noisy_I(k);
 
-        S_k      = H * P_pred_1RC * H' + Rcov1;
-        KG_1RC   = (P_pred_1RC * H') / S_k;
+        S_k    = H * P_pred_1RC * H' + Rcov1;
+        KG_1RC = (P_pred_1RC * H') / S_k;
         KG_1RC_all(k, :) = KG_1RC';
 
         z        = noisy_V(k);
@@ -279,10 +280,12 @@ for s = 1:num_trips-1
         x_estimate_1RC_all(k, :) = x_estimate';
         P_estimate_1RC = (eye(2) - KG_1RC*H) * P_pred_1RC;
 
-        SOC_est_1RC(k) = x_estimate(1);
-        V1_est_1RC(k)  = x_estimate(2);
+        SOC_est_1RC(k) = SOC_estimate_1RC;
+        V1_est_1RC(k)  = V1_estimate_1RC;
 
-        %% (2) 2RC 예측 단계
+        %-------------------------------------------------------------
+        % 2) 2RC 예측
+        %-------------------------------------------------------------
         R0_2RC = interp1(SOC_params, R0_params, SOC_estimate_2RC, 'linear', 'extrap');
         R1_2RC = interp1(SOC_params, R1_params, SOC_estimate_2RC, 'linear', 'extrap');
         C1_2RC = interp1(SOC_params, C1_params, SOC_estimate_2RC, 'linear', 'extrap');
@@ -290,18 +293,13 @@ for s = 1:num_trips-1
         C2_2RC = interp1(SOC_params, C2_params, SOC_estimate_2RC, 'linear', 'extrap');
 
         if k == 1
-            if s == 1
-                V1_pred = noisy_I(k)*R1_2RC*(1 - exp(-dt(k)/(R1_2RC*C1_2RC)));
-                V2_pred = noisy_I(k)*R2_2RC*(1 - exp(-dt(k)/(R2_2RC*C2_2RC)));
-            else
-                V1_pred = V1_estimate_2RC;
-                V2_pred = V2_estimate_2RC;
-            end
+            V1_pred = 0;
+            V2_pred = 0;
         else
             V1_pred = V1_estimate_2RC * exp(-dt(k)/(R1_2RC*C1_2RC)) ...
-                      + noisy_I(k)*R1_2RC*(1 - exp(-dt(k)/(R1_2RC*C1_2RC)));
+                      + noisy_I(k-1)*R1_2RC*(1 - exp(-dt(k)/(R1_2RC*C1_2RC)));
             V2_pred = V2_estimate_2RC * exp(-dt(k)/(R2_2RC*C2_2RC)) ...
-                      + noisy_I(k)*R2_2RC*(1 - exp(-dt(k)/(R2_2RC*C2_2RC)));
+                      + noisy_I(k-1)*R2_2RC*(1 - exp(-dt(k)/(R2_2RC*C2_2RC)));
         end
 
         SOC_pred_2RC = SOC_estimate_2RC + (dt(k)/(Q_batt*3600))*noisy_I(k);
@@ -339,36 +337,29 @@ for s = 1:num_trips-1
         V1_est_2RC(k)  = x_estimate(2);
         V2_est_2RC(k)  = x_estimate(3);
 
-        %% (3) DRT 예측 단계
+        %-------------------------------------------------------------
+        % 3) DRT 예측
+        %-------------------------------------------------------------
         SOC_pred_DRT = SOC_estimate_DRT + (dt(k)/(Q_batt*3600))*noisy_I(k);
 
         if k == 1
-            if s == 1
-                V_prev_DRT = zeros(num_RC,1);
-            else
-                V_prev_DRT = V_estimate_DRT;
-            end
+            V_pred_DRT = zeros(num_RC, 1);
         else
-            V_prev_DRT = V_estimate_DRT;
-        end
-
-        V_pred_DRT = zeros(num_RC, 1);
-        for i = 1:num_RC
-            V_pred_DRT(i) = V_prev_DRT(i)*exp(-dt(k)/(R_i(i)*C_i(i))) ...
-                            + noisy_I(k)*R_i(i)*(1 - exp(-dt(k)/(R_i(i)*C_i(i))));
+            V_pred_DRT = V_estimate_DRT .* exp(-dt(k) ./ (R_i .* C_i)) ...
+                         + noisy_I(k-1) * R_i .* (1 - exp(-dt(k) ./ (R_i .* C_i)));
         end
 
         x_pred = [SOC_pred_DRT; V_pred_DRT];
         x_pred_DRT_all(k, :) = x_pred';
 
-        A_DRT = diag([1; exp(-dt(k) ./ (R_i .* C_i))']);
+        % ** 여기서 ' 제거 **
+        A_DRT = diag([1; exp(-dt(k) ./ (R_i .* C_i))]);  
         P_pred_DRT = A_DRT * P_estimate_DRT * A_DRT' + Qcov3;
 
         OCV_pred   = interp1(unique_soc, unique_ocv, SOC_pred_DRT, 'linear', 'extrap');
         dOCV_dSOC  = interp1(unique_soc, dOCV_dSOC_values_smooth, SOC_pred_DRT, 'linear', 'extrap');
         H_DRT      = [dOCV_dSOC, ones(1,num_RC)];
 
-        % R0_est_all(s,1)은 DRT 추정된 R0값
         V_pred_total_DRT = OCV_pred + sum(V_pred_DRT) + R0_est_all(s,1)*noisy_I(k);
 
         S_k_DRT = H_DRT * P_pred_DRT * H_DRT' + Rcov3;
@@ -386,11 +377,11 @@ for s = 1:num_trips-1
         x_estimate_DRT_all(k, :) = x_estimate_DRT';
         P_estimate_DRT = (eye(1+num_RC) - KG_DRT*H_DRT) * P_pred_DRT;
 
-        SOC_est_DRT(k) = SOC_estimate_DRT;
-        V_est_DRT(k,:) = V_estimate_DRT';
+        SOC_est_DRT(k) = x_estimate_DRT(1);
+        V_est_DRT(k,:) = x_estimate_DRT(2:end)';
     end
 
-    % Trip 종료 후 초기값 업데이트
+    % ===== Trip 종료 후 초기값 업데이트 =====
     initial_SOC_true = True_SOC(end);
     initial_SOC_cc   = CC_SOC(end);
 
@@ -409,14 +400,16 @@ for s = 1:num_trips-1
 
     previous_trip_end_time = t(end);
 
-    % 결과 누적 (전체 시계열용)
-    t_all           = [t_all; t];
-    True_SOC_all    = [True_SOC_all; True_SOC];
-    CC_SOC_all      = [CC_SOC_all;   CC_SOC];
+    % ===== 결과 누적 =====
+    t_all         = [t_all; t];
+    True_SOC_all  = [True_SOC_all; True_SOC];
+    CC_SOC_all    = [CC_SOC_all;   CC_SOC];
+
     x_pred_1RC_all_trips     = [x_pred_1RC_all_trips;     x_pred_1RC_all];
     x_estimate_1RC_all_trips = [x_estimate_1RC_all_trips; x_estimate_1RC_all];
     KG_1RC_all_trips         = [KG_1RC_all_trips;         KG_1RC_all];
     residual_1RC_all_trips   = [residual_1RC_all_trips;   residual_1RC_all];
+
     I_all       = [I_all; I];
     noisy_I_all = [noisy_I_all; noisy_I];
     states_all  = [states_all; states];
@@ -431,13 +424,12 @@ for s = 1:num_trips-1
     KG_DRT_all_trips         = [KG_DRT_all_trips;         KG_DRT_all];
     residual_DRT_all_trips   = [residual_DRT_all_trips;   residual_DRT_all];
 
-    % ============== 구조체에 SOC 결과 추가 ==============
+    % 구조체에 SOC 결과 추가
     udds_data_soc_results(s).True_SOC = True_SOC;
-    udds_data_soc_results(s).CC_SOC  = CC_SOC;      % Coulomb-Counting 결과
-    udds_data_soc_results(s).SOC_1RC = SOC_est_1RC; % 1RC-KF 결과
-    udds_data_soc_results(s).SOC_2RC = SOC_est_2RC; % 2RC-KF 결과
-    udds_data_soc_results(s).SOC_DRT = SOC_est_DRT; % DRT-KF 결과
-
+    udds_data_soc_results(s).CC_SOC  = CC_SOC;      
+    udds_data_soc_results(s).SOC_1RC = SOC_est_1RC; 
+    udds_data_soc_results(s).SOC_2RC = SOC_est_2RC; 
+    udds_data_soc_results(s).SOC_DRT = SOC_est_DRT; 
 end
 
 %% 10) 결과 Plotting 및 RMSE 계산
@@ -449,10 +441,10 @@ rmse_True_DRT = sqrt(mean((x_estimate_DRT_all_trips(:,1) - True_SOC_all).^2));
 rmse_True_CC  = sqrt(mean((CC_SOC_all - True_SOC_all).^2));
 
 fprintf("\nRMSE of SOC Estimation:\n");
-fprintf("CC RMSE: %.6f\n",  rmse_True_CC);
-fprintf("1RC RMSE: %.6f\n", rmse_True_1RC);
-fprintf("2RC RMSE: %.6f\n", rmse_True_2RC);
-fprintf("DRT RMSE: %.6f\n", rmse_True_DRT);
+fprintf("CC   RMSE: %.6f\n", rmse_True_CC);
+fprintf("1RC  RMSE: %.6f\n", rmse_True_1RC);
+fprintf("2RC  RMSE: %.6f\n", rmse_True_2RC);
+fprintf("DRT  RMSE: %.6f\n", rmse_True_DRT);
 
 %% (A) 1RC Model Results
 figure('Name', '1RC Model Results');
@@ -600,8 +592,9 @@ xlabel('Time [s]'); ylabel('State Index');
 title('Markov State');
 grid on;
 
-% (Optional) 저장 예시:
-save('udds_data_soc_results.mat','udds_data_soc_results');
+% (Optional) 저장
+% save('udds_data_soc_results.mat','udds_data_soc_results');
+
 
 %%%%%========================================================
 %%%%%   (부록) Markov 노이즈 생성 함수

@@ -23,7 +23,7 @@ ocv_values = soc_ocv(:, 2);  % OCV
 n = 201;
 dur = 1370;       % [sec]
 SOC_begin = 0.9907;
-Q_batt = 2.6 ; % [Ah]
+Q_batt = 2.633 ; % [Ah]
 lambda_hat = 0.385;      % Hyperparameter for DRT (예시)
 
 %% 3. 각 trip에 대한 DRT 추정
