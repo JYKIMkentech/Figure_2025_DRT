@@ -73,11 +73,11 @@ V_cov   = 1e-8; % Voltage_cov(1);
 % 초기 P행렬
 Pcov1_init = [soc_cov/50, 0;
               0,         V_cov];
-Pcov2_init = [soc_cov/5,   0,       0;
+Pcov2_init = [soc_cov/2,   0,       0;
               0,          V_cov/4,  0;
               0,          0,        V_cov/4]; 
 Pcov3_init = zeros(1 + num_RC);
-Pcov3_init(1,1) = soc_cov;
+Pcov3_init(1,1) = soc_cov*2;
 for i = 2:(1 + num_RC)
     Pcov3_init(i,i) = V_cov / (201^2);
 end
@@ -85,11 +85,11 @@ end
 % 프로세스 잡음 Q
 Qcov1 = [soc_cov/50, 0;
          0,          V_cov];
-Qcov2 = [soc_cov/5,    0,          0;
+Qcov2 = [soc_cov/2,    0,          0;
          0,           V_cov/4,    0;
          0,           0,          V_cov/4];
 Qcov3 = zeros(1 + num_RC);
-Qcov3(1,1) = soc_cov;
+Qcov3(1,1) = soc_cov*2;
 for i = 2:(1 + num_RC)
     Qcov3(i,i) = V_cov / (201^2);
 end
@@ -592,8 +592,11 @@ xlabel('Time [s]'); ylabel('State Index');
 title('Markov State');
 grid on;
 
-% (Optional) 저장
-% save('udds_data_soc_results.mat','udds_data_soc_results');
+%% save
+% folder = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT';
+% filename = 'udds_data_soc_results.mat';
+% fullPath = fullfile(folder, filename);
+% save(fullPath, 'udds_data_soc_results');
 
 
 %%%%%========================================================

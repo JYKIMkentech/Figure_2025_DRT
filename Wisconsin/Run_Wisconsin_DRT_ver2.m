@@ -34,7 +34,7 @@ n          = 201;     % RC 소자(또는 tau grid) 개수
 dur        = 1370;    % tau_max [sec]
 SOC_begin  = 0.9907;  
 Q_batt     = 2.633; %2.7153;  % [Ah]
-lambda_hat = 4.28;   % DRT 정칙화 하이퍼파라미터
+lambda_hat = 0.05; % 4.28;   % DRT 정칙화 하이퍼파라미터
 num_bs     = 200;     % 부트스트랩 반복 횟수
 
 num_trips  = length(udds_data);
@@ -51,7 +51,7 @@ SOC_all          = cell(num_trips, 1);
 SOC_mid_all      = zeros(num_trips, 1);
 
 %% (3) 각 Trip 처리 (Trip 1 ~ num_trips-1)
-for s = 1:num_trips-1
+for s = 1:num_trips
     fprintf('Processing Trip %d / %d...\n', s, num_trips);
     
     % --- (A) 데이터 추출 ---
@@ -167,7 +167,7 @@ colors = interp1(linspace(0, 1, num_colors), colormap_choice, soc_normalized);
 
 figure('Name','3D DRT Plot','NumberTitle','off');
 hold on;
-for s = 1:num_trips-1
+for s = 1:num_trips
     x = SOC_mid_all(s) * ones(1, n);
     y = udds_data(s).theta_discrete(:);
     z = gamma_avg_all(s, :)';
@@ -177,7 +177,9 @@ xlabel('SOC', 'FontSize', labelFontSize);
 ylabel('\theta = ln(\tau [s])', 'FontSize', labelFontSize);
 zlabel('\gamma [\Omega]', 'FontSize', labelFontSize);
 title('Gamma Estimates vs. \theta and SOC (Bootstrap)', 'FontSize', titleFontSize);
-grid on; zlim([0, 1.5]);
+grid on; 
+zlim([0, 0.1]);
+ylim([-1 6]);
 set(gca, 'FontSize', axisFontSize);
 view(135, 30);
 hold off;
@@ -192,7 +194,7 @@ c.TickLabels = arrayfun(@(x) sprintf('%.3f', x), linspace(soc_min, soc_max, 5), 
 %% (5) Trip 1, 8, 16에 대한 별도 플롯
 special_trips = [1, 8, 16];
 for s = special_trips
-    if s <= num_trips-1
+    if s <= num_trips
         t = udds_data(s).t;
         I = udds_data(s).I;
         V = udds_data(s).V;
