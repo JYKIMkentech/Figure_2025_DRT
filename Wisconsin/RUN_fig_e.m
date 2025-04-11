@@ -61,7 +61,7 @@ box on; hold on;
 
 contourf(Xgrid, Ygrid, gamma_sorted_mat, 20, 'LineStyle','none');
 colormap(parula(256));  % 좀 더 부드럽게 256단계
-clim([0, 0.1]);         % gamma 값 범위 (0~0.1)
+%caxis([0, 0.1]);         % gamma 값 범위 (0~0.1)
 colorbar;               % colorbar 표시
 
 xlabel('\theta = ln(\tau [s])','FontSize',axisLabelFontSize);
@@ -89,7 +89,7 @@ box on; hold on;
 % 실제 사용할 trip 개수 (numTrips - 6)
 nUse = size(gamma_sorted_mat, 1);
 
-offsetGap = 0.1;  % SOC별 곡선을 위로 띄울 간격
+offsetGap = 0.012;  % SOC별 곡선을 위로 띄울 간격
 
 % parula에서 nUse개 색상 뽑아온다.
 % → index=1일 때 보통 파란 쪽, index=nUse일 때 노란 쪽
@@ -124,11 +124,18 @@ set(gca,'FontSize',axisTickFontSize);
 
 % x축 범위 지정
 xlim([-1, 6]);
+ylim([0, 0.18]);
 
-% y축 범위 지정 (offset까지 고려)
-minGamma = min(gamma_sorted_mat(:));
-maxGamma = max(gamma_sorted_mat(:));
-ylim([minGamma, maxGamma + offsetGap*(nUse-1)]);
+% % y축 범위 지정 (offset까지 고려)
+% minGamma = min(gamma_sorted_mat(:));
+% maxGamma = max(gamma_sorted_mat(:));
+% ylim([minGamma, maxGamma + offsetGap*(nUse-1)]);
+
+
+
+
+
+
 
 % (옵션) 축 자체도 Clipping off 가능
 % set(gca,'Clipping','off');
