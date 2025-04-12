@@ -144,5 +144,56 @@ ylim([0, 0.18]);
 exportgraphics(fig2, 'Fig_e2_Offset.png','Resolution',300);
 
 
+%% (5) Additional Figures for Trip #6: Voltage Comparison
+
+% -- Extract time and voltages for trip #6
+tripIdx = 6;
+time_s = udds_data_soc_results(tripIdx).t;     % time vector
+V_meas = udds_data_soc_results(tripIdx).V;     % measured voltage
+V_est  = udds_data_soc_results(tripIdx).V_est; % estimated voltage
+
+% For consistency, you can reuse or define figure sizes:
+figWidth  = 15;  % cm
+figHeight = 8;
+
+%% Figure #3: Voltage comparison in 0–100 s
+fig3 = figure('Units','centimeters','Position',[3 3 figWidth figHeight]);
+box on; hold on;
+plot(time_s, V_meas, 'b','LineWidth',1.2);
+plot(time_s, V_est,  'r','LineWidth',1.2);
+xlabel('Time [s]','FontSize',axisLabelFontSize);
+ylabel('Voltage [V]','FontSize',axisLabelFontSize);
+legend({'V_{meas}','V_{est}'},'Location','best');
+set(gca,'FontSize',axisTickFontSize);
+xlim([0 100]);
+title('Trip #6 Voltage Comparison: 0–100 s');
+exportgraphics(fig3,'Fig_e3_Trip6_0to100.png','Resolution',300);
+
+%% Figure #4: Voltage comparison in 1300–1400 s
+fig4 = figure('Units','centimeters','Position',[3 3 figWidth figHeight]);
+box on; hold on;
+plot(time_s, V_meas, 'b','LineWidth',1.2);
+plot(time_s, V_est,  'r','LineWidth',1.2);
+xlabel('Time [s]','FontSize',axisLabelFontSize);
+ylabel('Voltage [V]','FontSize',axisLabelFontSize);
+legend({'V_{meas}','V_{est}'},'Location','best');
+set(gca,'FontSize',axisTickFontSize);
+xlim([1300 1400]);
+title('Trip #6 Voltage Comparison: 1300–1400 s');
+exportgraphics(fig4,'Fig_e4_Trip6_1300to1400.png','Resolution',300);
+
+%% Figure #5: Voltage comparison over full time
+fig5 = figure('Units','centimeters','Position',[3 3 figWidth figHeight]);
+box on; hold on;
+plot(time_s, V_meas, 'b','LineWidth',1);
+plot(time_s, V_est,  'r','LineWidth',1);
+xlabel('Time [s]','FontSize',axisLabelFontSize);
+ylabel('Voltage [V]','FontSize',axisLabelFontSize);
+legend({'V_{meas}','V_{est}'},'Location','best');
+set(gca,'FontSize',axisTickFontSize);
+title('Trip #6 Voltage Comparison: Full Time Range');
+exportgraphics(fig5,'Fig_e5_Trip6_FullTime.png','Resolution',300);
+
+
 
 
