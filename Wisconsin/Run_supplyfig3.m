@@ -174,8 +174,8 @@ for trip_idx = 1:4
         'ItemTokenSize', legendTokenSize);
 end
 
-% exportgraphics(gcf,'Fig1_Trips1to4.png','Resolution',300);
-% savefig(gcf,'Fig1_Trips1to4.fig');
+exportgraphics(gcf,'Fig1_Trips1to4.png','Resolution',300);
+savefig(gcf,'Fig1_Trips1to4.fig');
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -292,8 +292,8 @@ for trip_idx = 5:8
         'ItemTokenSize', legendTokenSize);
 end
 
-% exportgraphics(gcf,'Fig2_Trips5to8.png','Resolution',300);
-% savefig(gcf,'Fig2_Trips5to8.fig');
+exportgraphics(gcf,'Fig2_Trips5to8.png','Resolution',300);
+savefig(gcf,'Fig2_Trips5to8.fig');
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -350,13 +350,13 @@ for trip_idx = 9:11
     h5 = plot(t, V_est, 'LineWidth', lineWidthEst,...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    ylim(voltageYLim_full);
+    %ylim(voltageYLim_full);
 
     yyaxis right
     h6 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    ylim(currentYLim_full);
+    %ylim(currentYLim_full);
 
     xlim([0, t(end)]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -411,8 +411,8 @@ for trip_idx = 9:11
         'ItemTokenSize', legendTokenSize);
 end
 
-% exportgraphics(gcf,'Fig3_Trips9to11.png','Resolution',300);
-% savefig(gcf,'Fig3_Trips9to11.fig');
+exportgraphics(gcf,'Fig3_Trips9to11.png','Resolution',300);
+savefig(gcf,'Fig3_Trips9to11.fig');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 끝.
