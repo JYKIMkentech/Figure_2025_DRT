@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 전체 코드 예시:
+% 
 % - Figure 1: Trip 1~4
 % - Figure 2: Trip 5~8
 % - Figure 3: Trip 9~11
@@ -10,7 +10,6 @@
 %   3) DRT
 %   4) SOC
 %
-% 전압/전류 범위와 legend 라인 길이/두께 등을 조정.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clc; clear; close all;
@@ -25,14 +24,14 @@ lineWidthEst  = 1.2;  % Est.V 선 굵기 (점선)
 lineWidthCurr = 1;  
 lineWidthSOC  = 1;  
 
-% 전압/전류 축 범위 지정(예시)
-voltageYLim_short = [3.85, 3.95];  % 0~100초 구간에서 전압 범위
-currentYLim_short = [-2, 10];      % 0~100초 구간에서 전류 범위
+% 전압/전류 축 범위 지정
+% voltageYLim_short = [3.85, 3.95];  % 0~100초 구간에서 전압 범위
+% currentYLim_short = [-2, 10];      % 0~100초 구간에서 전류 범위
+% 
+% voltageYLim_full  = [3.70, 4.00];  % 전체 구간에서 전압 범위
+% currentYLim_full  = [-5, 12];      % 전체 구간에서 전류 범위
 
-voltageYLim_full  = [3.70, 4.00];  % 전체 구간에서 전압 범위
-currentYLim_full  = [-5, 12];      % 전체 구간에서 전류 범위
-
-% 범례 라인 길이/두께 (ItemTokenSize)
+% legend 라인 길이/두께 
 legendTokenSize = [10, 4];  % [라인길이, 아이콘높이]
 
 %% (2) 색깔 배열
@@ -50,16 +49,13 @@ p_colors = [
     0.00000, 0.00000, 0.00000;  % #11 (black)
 ];
 
-%% (3) 데이터 로드
-%  아래는 예시 경로/변수명. 사용 환경에 맞춰 수정하세요.
-%  udds_data_soc_results(1~16) 등에 각 Trip별 t, V, V_est, I, theta_discrete, gamma_est,
-%  True_SOC, CC_SOC, SOC_1RC, SOC_2RC, SOC_DRT 등이 있다고 가정.
+%% (3) Data load
+
 load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\Wisconsin_DRT\udds_data_soc_results.mat',...
      'udds_data_soc_results');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% (4) Figure 1: Trip 1 ~ 4
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 figure('Name','Trips 1~4','Units','centimeters','Position',[2 2 28 25]);
 
 numRows = 4;  % Trip 1,2,3,4
@@ -84,13 +80,11 @@ for trip_idx = 1:4
     h2 = plot(t, V_est, 'LineWidth', lineWidthEst, ...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    %ylim(voltageYLim_short);  % 전압 범위 (0~100초 구간)
 
     yyaxis right
     h3 = plot(t, I, 'LineWidth', lineWidthCurr, ...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    %ylim(currentYLim_short);  % 전류 범위 (0~100초 구간)
 
     xlim([0 100]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -112,13 +106,11 @@ for trip_idx = 1:4
     h5 = plot(t, V_est, 'LineWidth', lineWidthEst, ...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    %ylim(voltageYLim_full);  % 전압 범위 (전체)
 
     yyaxis right
     h6 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    %ylim(currentYLim_full);  % 전류 범위 (전체)
 
     xlim([0, t(end)]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -178,9 +170,8 @@ exportgraphics(gcf,'Fig1_Trips1to4.png','Resolution',300);
 savefig(gcf,'Fig1_Trips1to4.fig');
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% (5) Figure 2: Trip 5 ~ 8
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure('Name','Trips 5~8','Units','centimeters','Position',[2 2 28 25]);
 
 numRows = 4;  
@@ -205,13 +196,11 @@ for trip_idx = 5:8
     h2 = plot(t, V_est, 'LineWidth', lineWidthEst,...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    %ylim(voltageYLim_short);
 
     yyaxis right
     h3 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    %ylim(currentYLim_short);
 
     xlim([0 100]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -232,13 +221,11 @@ for trip_idx = 5:8
     h5 = plot(t, V_est, 'LineWidth', lineWidthEst,...
         'Color', p_colors(3,:),'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    ylim(voltageYLim_full);
 
     yyaxis right
     h6 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    ylim(currentYLim_full);
 
     xlim([0, t(end)]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -296,9 +283,9 @@ exportgraphics(gcf,'Fig2_Trips5to8.png','Resolution',300);
 savefig(gcf,'Fig2_Trips5to8.fig');
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% (6) Figure 3: Trip 9 ~ 11
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 figure('Name','Trips 9~11','Units','centimeters','Position',[2 2 28 20]);
 
 numRows = 3;  
@@ -323,13 +310,11 @@ for trip_idx = 9:11
     h2 = plot(t, V_est, 'LineWidth', lineWidthEst,...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    %ylim(voltageYLim_short);
 
     yyaxis right
     h3 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    %ylim(currentYLim_short);
 
     xlim([0 100]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -350,13 +335,11 @@ for trip_idx = 9:11
     h5 = plot(t, V_est, 'LineWidth', lineWidthEst,...
         'Color', p_colors(3,:), 'LineStyle',':', 'DisplayName','Est.V');
     ylabel('Voltage [V]','FontSize', axisLabelFontSize);
-    %ylim(voltageYLim_full);
 
     yyaxis right
     h6 = plot(t, I, 'LineWidth', lineWidthCurr,...
         'Color', p_colors(4,:), 'LineStyle','-', 'DisplayName','Current');
     ylabel('Current [A]','FontSize', axisLabelFontSize);
-    %ylim(currentYLim_full);
 
     xlim([0, t(end)]);
     xlabel('Time [s]','FontSize', axisLabelFontSize);
@@ -413,8 +396,4 @@ end
 
 exportgraphics(gcf,'Fig3_Trips9to11.png','Resolution',300);
 savefig(gcf,'Fig3_Trips9to11.fig');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 끝.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

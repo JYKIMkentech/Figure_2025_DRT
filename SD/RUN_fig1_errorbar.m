@@ -249,8 +249,13 @@ annotation('textbox', ...
     'String','(c)', 'FontSize',annotationFontSize, 'FontWeight','bold', ...
     'EdgeColor','none','Color','k');
 
+
 %% ================== (Optional) Figure 저장 =====================
-exportgraphics(gcf, 'Figure_Compare_4percent_typeC_n211.png','Resolution',300);
-% 또는:
-% set(gcf,'PaperPositionMode','auto');
-% print(gcf,'-dpng','Figure_Compare_4percent_typeC_n21.png','-r300');
+outName = 'Figure_Compare_4percent_typeC_n21';
+
+% PNG (300 dpi)
+exportgraphics(gcf, [outName '.png'], 'Resolution', 300);
+
+% FIG  ← 추가된 부분
+savefig(gcf, [outName '.fig']);          % .fig 형식으로도 저장
+

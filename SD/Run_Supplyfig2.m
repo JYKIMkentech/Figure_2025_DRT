@@ -547,4 +547,10 @@ for iRow = 1:3
 end
 
 %% === 6) OPTIONAL: SAVE FIGURE ===============================================
-exportgraphics(gcf,'CompareAll_AS2_3x4.png','Resolution',300);
+outName = 'CompareAll_AS2_3x4';   % 파일 이름 (확장자 제외)
+
+% PNG (300 dpi)
+exportgraphics(gcf, [outName '.png'], 'Resolution', 300);
+
+% FIG  ← 추가된 부분
+savefig(gcf, [outName '.fig']);         % MATLAB 자체 형식도 함께 저장
