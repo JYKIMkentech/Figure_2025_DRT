@@ -209,6 +209,8 @@ save('gamma_est_all.mat', 'gamma_est_all', 'SOC_mid_all');
 save('theta_discrete.mat' , 'theta_discrete' );
 save('R0_est_all.mat', 'R0_est_all');
 
-%% (중요) 갱신된 udds_data를 저장
-save('udds_data.mat', 'udds_data');
+% (중요) 갱신된 udds_data를 지정 폴더에 저장
+output_dir = 'G:\공유 드라이브\BSL_Data3\UDDS DRT';
+save(fullfile(output_dir, 'udds_data.mat'), 'udds_data');
+
 
