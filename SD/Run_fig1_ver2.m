@@ -44,8 +44,8 @@ voltageLabelOffsetX = -30;
 %% (1) Load Data (5% Noise: Unimodal vs Bimodal)
 % (사용하시는 데이터 경로와 파일 이름은 예시입니다.)
 data_path = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\SD_DRT\';
-load(fullfile(data_path, 'AS1_4per_new.mat'), 'AS1_4per_new');  % Unimodal 5%
-load(fullfile(data_path, 'AS2_4per_new.mat'), 'AS2_4per_new');  % Bimodal 5%
+load(fullfile(data_path, 'AS1_4per_new.mat'), 'AS1_4per_new');  % Unimodal 4%
+load(fullfile(data_path, 'AS2_4per_new.mat'), 'AS2_4per_new');  % Bimodal 4%
 load(fullfile(data_path, 'Gamma_unimodal.mat'), 'Gamma_unimodal');
 load(fullfile(data_path, 'Gamma_bimodal.mat'),  'Gamma_bimodal');
 
