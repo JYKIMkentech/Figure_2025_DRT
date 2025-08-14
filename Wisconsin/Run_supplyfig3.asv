@@ -6,7 +6,7 @@ clc; clear; close all;
 
 %% Figure 위치·크기 ---------------------------------------------------------
 figPos   = [100 100];
-figSize  = [1500 500];
+figSize  = [1200 500];
 figSize3 = [figSize(1) round(figSize(2)*0.75)];
 makeFig  = @(name,pos) figure('Name',name,'Units','pixels','Position',pos);
 
