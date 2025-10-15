@@ -1,0 +1,76 @@
+clc;clear;close all;
+
+%% 파일 경로
+file = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\데이터2.xlsx';
+assert(exist(file,'file')==2, "엑셀 파일을 찾을 수 없습니다: %s", file);
+
+%% 1) 테이블로 우선 읽기 (헤더 보존)
+opts = detectImportOptions(file, 'PreserveVariableNames', true);
+T    = readtable(file, opts);
+
+%% 2) struct로 매핑
+vn = lower(T.Properties.VariableNames);  % 소문자 이름들
+
+% 각 컬럼 인덱스 탐색(유연 매칭)
+idxTime  = find(contains(vn,'time'), 1, 'first');
+idxVolt  = find(contains(vn,'ewe') | contains(vn,'volt'), 1, 'first');
+idxCurr  = find(strcmp(vn,'i') | contains(vn,'i/') | contains(vn,'current'), 1, 'first');
+idxReZ   = find(contains(vn,'re') & contains(vn,'z'), 1, 'first');
+idxNegIm = find(contains(vn,'-im') & contains(vn,'z') | strcmp(vn,'#name?'), 1, 'first'); % -Im(Z) 또는 #NAME?
+idxIm    = find(contains(vn,'im') & contains(vn,'z') & ~contains(vn,'-im'), 1, 'first');
+
+assert(~isempty(idxTime) && ~isempty(idxVolt) && ~isempty(idxCurr), ...
+    '필수 열(time/Ewe/I)을 찾지 못했습니다. 엑셀 헤더를 확인하세요.');
+
+% 전류 단위 판별 및 A로 변환
+nameI = vn{idxCurr};
+Iraw  = T{:, idxCurr};
+if contains(nameI,'ma')
+    Iamp = Iraw/1000;          % mA -> A
+elseif contains(nameI,'ua') || contains(nameI,'µa')
+    Iamp = Iraw/1e6;           % µA -> A
+else
+    Iamp = Iraw;               % 이미 A라고 가정
+end
+
+% struct 생성
+S = struct();
+S.time_s     = T{:, idxTime};
+S.voltage_V  = T{:, idxVolt};
+S.current_A  = Iamp;
+
+% 임피던스가 있으면 추가
+if ~isempty(idxReZ)
+    S.ReZ_Ohm = T{:, idxReZ};
+end
+if ~isempty(idxNegIm)
+    S.NegImZ_Ohm = T{:, idxNegIm};
+elseif ~isempty(idxIm)
+    S.NegImZ_Ohm = -T{:, idxIm};  % Im(Z)만 있으면 부호 반전해서 -Im(Z)
+end
+
+clear T opts vn Iraw Iamp nameI idxTime idxVolt idxCurr idxReZ idxNegIm idxIm
+
+%% 3) 빠른 확인
+fprintf('데이터 길이: %d 샘플\n', numel(S.time_s));
+disp('필드 목록:'); disp(fieldnames(S)');
+
+%% 4) 기본 플롯
+figure('Color','w'); 
+plot(S.time_s, S.voltage_V, 'LineWidth', 1.1);
+grid on; xlabel('Time [s]'); ylabel('Voltage [V]');
+title('Voltage vs Time');
+
+figure('Color','w');
+plot(S.time_s, S.current_A, 'LineWidth', 1.1);
+grid on; xlabel('Time [s]'); ylabel('Current [A]');
+title('Current vs Time');
+
+% Nyquist (있을 때만)
+if isfield(S,'ReZ_Ohm') && isfield(S,'NegImZ_Ohm')
+    figure('Color','w');
+    plot(S.ReZ_Ohm, S.NegImZ_Ohm, '-o', 'MarkerSize', 3, 'LineWidth', 1.0);
+    grid on; axis equal;
+    xlabel('Re(Z) [\Omega]'); ylabel('-Im(Z) [\Omega]');
+    title('Nyquist Plot');
+end
