@@ -1,5 +1,4 @@
-%% DRT_fit_run.m
-clc; clear; close all;
+clc;clear;close all;
 
 %% ====== 0) 로드 ======
 load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\Trips.mat', 'data1');
@@ -18,9 +17,9 @@ end
 
 %% ====== 1) 파라미터 ======
 trip_to_fit = 1;         % 예) Trip1 (Trip 번호만 변경해서 사용)
-n           = 21;        % RC 개수
-dur         = 3000;        % tau_max [s]
-lambda_hat  = 10;        % 규제강도(요청대로 고정)
+n           = 201;       % RC 개수
+dur         = 300;        % tau_max [s]
+lambda_hat  = 1;         % 규제강도(요청대로 고정)
 
 %% ====== 2) Trip 데이터 준비 ======
 tripName = sprintf('Trip%d', trip_to_fit);
@@ -51,27 +50,84 @@ dt = [0; diff(t)];
 
 fprintf('Trip %d: R0_est = %.6g (단위는 입력 전류 단위에 의존)\n', trip_to_fit, R0_est);
 
-%% ====== 4) 결과 플롯 ======
-% (a) 전압 피팅 + 전류(같은 Figure)
+%% ====== 4) 결과 플롯 (시간 리셋) ======
+% 색상 지정
+cV_meas = [0.0, 0.45, 0.76] * 0.7 ;   % 파랑: Measured V
+cV_est  = [0.7,  0,    0   ];   % 초록: Estimated V
+cI      = [0,    0.7,  0.7 ];   % 빨강: Current
+
+% --- 플롯 전용: 직전 REST END 한 점을 앞에 1개 덧붙여서
+%     V_est(prev) = OCV(prev) 가 보이도록 함 (피팅/RMSE에는 영향 X)
+usePrevPoint = (trip_to_fit >= 1) && isfield(data1, sprintf('Trip%d',trip_to_fit-1));
+if usePrevPoint
+    prevTripName = sprintf('Trip%d', trip_to_fit-1);
+    Mprev = data1.(prevTripName);
+    prevRow = Mprev(end,:);                 % [t_prev, I_prev(≈0), V_prev, (SOC_prev)]
+    t0p   = prevRow(1);
+    I0p   = prevRow(2);
+    V0p   = prevRow(3);
+
+    % prev SOC 있으면 사용, 없으면 V->SOC 역보간 후 OCV 계산
+    if size(Mprev,2) >= 4 && ~isnan(prevRow(4))
+        SOC0p = prevRow(4);
+    else
+        SOC0p = interp1(ocv_values, soc_values, V0p, 'linear', 'extrap');
+    end
+    OCV0p = interp1(soc_values, ocv_values, SOC0p, 'linear', 'extrap');
+
+    % 플롯용 시퀀스 (맨 앞에 prev REST END 샘플 1개 추가)
+    t_plot   = [t0p;   t   ];
+    I_plot   = [I0p;   I   ];
+    Vsd_plot = [V0p;   Vsd ];
+    Vest_plot= [OCV0p; V_est];
+
+    % Trip 시작을 0초로 맞춘 상대시간
+    t_rel_plot = t_plot - t_plot(1);
+else
+    % 이전 점이 없으면 원래 벡터 그대로 사용
+    t_plot = t; I_plot = I; Vsd_plot = Vsd; Vest_plot = V_est;
+    t_rel_plot = t - t(1);
+end
+
+% ------------------ (a) 전체 구간 (상대시간) ------------------
 figure('Color','w');
 
 yyaxis left
-hV_meas = plot(t, Vsd, 'LineWidth', 1.2); hold on;
-hV_est  = plot(t, V_est, 'LineWidth', 1.2);
+hV_meas = plot(t_rel_plot, Vsd_plot, 'LineWidth', 1.4, 'Color', cV_meas, 'DisplayName','Measured V'); hold on;
+hV_est  = plot(t_rel_plot, Vest_plot,'LineWidth', 1.4, 'Color', cV_est,  'DisplayName','Estimated V');
 ylabel('Voltage [V]');
 grid on;
+ax = gca; ax.YColor = [0.15 0.15 0.15]; % 왼쪽 y축(전압)
 
 yyaxis right
-hI = plot(t, I, 'LineWidth', 1.0);
+hI = plot(t_rel_plot, I_plot, 'LineWidth', 1.2, 'Color', cI, 'DisplayName','Current');
 ylabel('Current [mA]');
+ax.YColor = cI; % 오른쪽 y축(전류) 색을 전류색으로
 
-xlabel('Time [s]');
-% title는 생략
+xlabel('Time from trip start [s]');
 legend([hV_meas, hV_est, hI], {'Measured V','Estimated V','Current'}, 'Location','best');
 
-%xlim([3600 3700]);   % 기존 범위 유지
+% ------------------ (b) 0~100 s 확대 (상대시간) ------------------
+figure('Color','w');
 
-%% ====== 5) 참고: 잔차(RMSE) 출력
+yyaxis left
+hV_meas2 = plot(t_rel_plot, Vsd_plot, 'LineWidth', 1.4, 'Color', cV_meas, 'DisplayName','Measured V'); hold on;
+hV_est2  = plot(t_rel_plot, Vest_plot,'LineWidth', 1.4, 'Color', cV_est,  'DisplayName','Estimated V');
+ylabel('Voltage [V]');
+grid on;
+ax2 = gca; ax2.YColor = [0.15 0.15 0.15];
+
+yyaxis right
+hI2 = plot(t_rel_plot, I_plot, 'LineWidth', 1.2, 'Color', cI, 'DisplayName','Current');
+ylabel('Current [mA]');
+ax2.YColor = cI;
+
+xlabel('Time from trip start [s]');
+zoom_end = min(100, t_rel_plot(end));   % 데이터가 100s 미만이어도 안전
+xlim([0 zoom_end]);
+legend([hV_meas2, hV_est2, hI2], {'Measured V','Estimated V','Current'}, 'Location','best');
+title('Zoom: 0–100 s (from trip start)');
+
+%% ====== 5) 참고: 잔차(RMSE) 출력 ======
 rmse = sqrt(mean((Vsd - V_est).^2));
 fprintf('Trip %d: Voltage RMSE = %.6g V\n', trip_to_fit, rmse);
-

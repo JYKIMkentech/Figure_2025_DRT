@@ -18,7 +18,7 @@ ReZ    = double(T(:,4));
 NegImZ = double(T(:,5));   
 
 %% ====== 2) 전류=0 구간(50분 이상 연속) 탐지 -> 결과는 모두 double 배열 ======
-I_zero_tol = 1e-3;             % 0 판정 허용오차 [mA]
+I_zero_tol = 0;             % 0 판정 허용오차 [mA]
 min_zero_duration_sec = 50*60; % 50분
 
 zero_mask = abs(I) <= I_zero_tol;
