@@ -19,7 +19,7 @@ end
 %% ====== 1) 파라미터 ======
 trip_to_fit = 1;         % 예) Trip1 (Trip 번호만 변경해서 사용)
 n           = 21;        % RC 개수
-dur         = 60;        % tau_max [s]
+dur         = 3000;        % tau_max [s]
 lambda_hat  = 10;        % 규제강도(요청대로 고정)
 
 %% ====== 2) Trip 데이터 준비 ======
@@ -52,24 +52,24 @@ dt = [0; diff(t)];
 fprintf('Trip %d: R0_est = %.6g (단위는 입력 전류 단위에 의존)\n', trip_to_fit, R0_est);
 
 %% ====== 4) 결과 플롯 ======
-% (a) 전압 피팅 비교
+% (a) 전압 피팅 + 전류(같은 Figure)
 figure('Color','w');
-plot(t, Vsd, 'LineWidth', 1.2); hold on;
-plot(t, V_est, 'LineWidth', 1.2);
-xlabel('Time [s]'); ylabel('Voltage [V]');
-%title(sprintf('Trip %d Voltage Fit (lambda=%.2g, n=%d, tau_{max}=%gs)', ...
-      %trip_to_fit, lambda_hat, n, dur));
-legend({'Measured V','Estimated V'}, 'Location','best'); grid on;
-xlim([3600 3700]);
 
-
-% (b) 저항분포(gamma vs tau)
-tau_discrete = exp(theta_discrete);
-figure('Color','w');
-semilogx(tau_discrete, gamma_est, 'LineWidth', 1.5);
-xlabel('\tau [s]'); ylabel('\gamma(\tau) [arb.]');
-title(sprintf('Trip %d Estimated Resistance Distribution', trip_to_fit));
+yyaxis left
+hV_meas = plot(t, Vsd, 'LineWidth', 1.2); hold on;
+hV_est  = plot(t, V_est, 'LineWidth', 1.2);
+ylabel('Voltage [V]');
 grid on;
+
+yyaxis right
+hI = plot(t, I, 'LineWidth', 1.0);
+ylabel('Current [mA]');
+
+xlabel('Time [s]');
+% title는 생략
+legend([hV_meas, hV_est, hI], {'Measured V','Estimated V','Current'}, 'Location','best');
+
+%xlim([3600 3700]);   % 기존 범위 유지
 
 %% ====== 5) 참고: 잔차(RMSE) 출력
 rmse = sqrt(mean((Vsd - V_est).^2));
