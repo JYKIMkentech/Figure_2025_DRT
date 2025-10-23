@@ -6,8 +6,6 @@ assert(exist(file,'file')==2, "파일을 찾을 수 없습니다: %s", file);
 
 load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\rOCV.mat');
 
-
-
 %% ====== 1) 엑셀 읽기 (1행 헤더, 2행부터 숫자) ======
 % [time/s, Ewe/V, I/mA, Re(Z)/Ohm, -Im(Z)/Ohm]
 T = readmatrix(file, 'NumHeaderLines', 1);
@@ -94,10 +92,79 @@ for k = 0:(numel(trip_ranges)-1)
     fprintf('  Trip%d: %d x 3\n', k, size(M,1));
 end
 
-%% ====== 5) 플로팅(맨 마지막) ======
-figure('Color','w');
+%% ====== 4.5) SOC-OCV 테이블에서 Trip SOC 계산 및 부착 (nx4로 갱신) ======
+% rOCV.mat에서 SOC-OCV 테이블 확보
+if exist('OCV_golden','var') && isfield(OCV_golden,'OCVdis')
+    soc_values = double(OCV_golden.OCVdis(:,1));
+    ocv_values = double(OCV_golden.OCVdis(:,2));
+elseif exist('soc_values','var') && exist('ocv_values','var')
+    soc_values = double(soc_values(:));
+    ocv_values = double(ocv_values(:));
+else
+    error('SOC-OCV 데이터(soc_values/ocv_values 또는 OCV_golden.OCVdis)가 필요합니다.');
+end
 
-% 좌/우축 지정 및 시계열 플롯
+for k = 1:numel(trip_ranges)
+    idx = trip_ranges{k};
+    if isempty(idx), continue; end
+
+    tTrip = t(idx);  ITrip = I(idx);  VTrip = V(idx);
+
+    % Trip0은 스킵 (SOC 계산하지 않음)
+    if k == 1
+        data1.(sprintf('Trip%d',k-1)) = [tTrip, ITrip, VTrip, nan(size(tTrip))];
+        continue;
+    end
+
+    % 이 Trip의 양끝 REST END 인덱스 (왼쪽: soc0, 오른쪽: soc1)
+    leftRestIdx  = end_idx(k-1);
+    rightHasRest = (k <= Nend);
+    if ~rightHasRest
+        % 끝 REST가 없으면 SOC 계산 불가
+        data1.(sprintf('Trip%d',k-1)) = [tTrip, ITrip, VTrip, nan(size(tTrip))];
+        continue;
+    end
+    rightRestIdx = end_idx(k);
+
+    % OCV->SOC 역보간으로 soc0, soc1
+    V0 = V(leftRestIdx);   V1 = V(rightRestIdx);
+    soc0 = interp1(ocv_values, soc_values, V0, 'linear', 'extrap');
+    soc1 = interp1(ocv_values, soc_values, V1, 'linear', 'extrap');
+
+    % 누적 전하량 Idt (mAh) 및 Trip 총량
+    Idt_cum = cumtrapz(tTrip, ITrip) / 3600;   % mA*s -> mAh
+    Qtrip   = Idt_cum(end);
+
+    if abs(Qtrip) < eps
+        socVec = soc0 * ones(size(tTrip));
+    else
+        % 진행 비율 r(0->1).  사용자 요청대로 "더하기가 아닌 빼기" 반영:
+        % socVec = soc0 - (soc0 - soc1) * r  (== soc0 + (soc1 - soc0) * r)
+        r = Idt_cum / Qtrip;        % 부호 상관없이 0~1 진행
+        socVec = soc0 - (soc0 - soc1) .* r;
+    end
+
+    % nx4: [t, I, V, SOC]
+    data1.(sprintf('Trip%d',k-1)) = [tTrip, ITrip, VTrip, socVec];
+end
+
+
+
+%% ====== 5) 플로팅: (1) Voltage-Current, (2) SOC-Current ======
+
+% --- Trip별 SOC(4번째 열)를 이어붙여 전체 구간 SOC 벡터 구성 ---
+SOC_all = nan(size(t));
+for k = 1:numel(trip_ranges)
+    idx = trip_ranges{k};
+    if isempty(idx), continue; end
+    Mk = data1.(sprintf('Trip%d',k-1));
+    if size(Mk,2) >= 4
+        SOC_all(idx) = Mk(:,4);
+    end
+end
+
+%% (1) Voltage & Current
+fig1 = figure('Color','w');
 yyaxis left
 hV = plot(t, V, 'LineWidth', 1.2); hold on;
 ylabel('Voltage [V]');
@@ -107,46 +174,63 @@ yyaxis right
 hI = plot(t, I, 'LineWidth', 1.0); hold on;
 ylabel('Current [mA]');
 
-% Rest START / END 마커(동그라미)
+% Rest START / END markers
 hStart = plot(t(start_idx), I(start_idx), 'o', ...
     'MarkerSize', 6, 'LineWidth', 1.2, ...
     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'none');
-
 hEnd = plot(t(end_idx), I(end_idx), 'o', ...
     'MarkerSize', 6, 'LineWidth', 1.2, ...
     'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'none');
 
-% ---- Trip 경계(검은색 수직 점선, **REST END 위치**, 굵게) ----
-hb = gobjects(0);
+% Trip boundaries (REST END 위치) - 라벨 텍스트 없음
 for i = 1:Nend
-    hb(end+1) = xline(t(end_idx(i)), 'k:', 'LineWidth', 2.0); 
+    xline(t(end_idx(i)), 'k:', 'LineWidth', 2.0);
 end
 
-% ---- Trip 라벨: 각 구간 중앙 시점에 'Trip k' ----
-yyaxis left
-yl = ylim;
-y_top = yl(2);
-y_pos = y_top - 0.03*(yl(2)-yl(1));   % 상단에서 3% 아래
-
-for k = 1:numel(trip_ranges)
-    idx = trip_ranges{k};
-    if isempty(idx), continue; end
-    t_mid = 0.5*(t(idx(1)) + t(idx(end)));
-    text(t_mid, y_pos, sprintf('Trip %d', k-1), ...
-        'HorizontalAlignment','center', 'VerticalAlignment','top', ...
-        'FontWeight','bold', 'FontSize', 9, 'Clipping','on');
-end
-
-% 제목/레이블/범례
 xlabel('Time [s]');
-title('Voltage & Current vs Time (Rest END-based Trips)');
-if ~isempty(hb)
-    legend([hI, hV, hStart, hEnd, hb(1)], ...
-           {'Current','Voltage','Rest START','Rest END','Trip boundary (END)'}, ...
-           'Location','best');
-else
-    legend([hI, hV, hStart, hEnd], ...
-           {'Current','Voltage','Rest START','Rest END'}, ...
-           'Location','best');
-end
+title('Voltage & Current vs Time');
+lg1 = legend([hI, hV, hStart, hEnd], ...
+      {'Current','Voltage','Rest START','Rest END'}, 'Location','best');
+set(lg1, 'Box','off', 'FontSize',9);
+
+ax1 = gca; ax1.Position = [0.08 0.12 0.86 0.78];  % 여백 축소
+
+%% (2) SOC & Current
+fig2 = figure('Color','w');
+
+% SOC는 왼쪽 축(마젠타), Current는 오른쪽 축
+yyaxis left
+hSOC = plot(t, SOC_all, 'm', 'LineWidth', 1.2); hold on;
+ylabel('SOC [-]'); % [%]로 보고 싶으면 100*SOC_all로 바꾸고 라벨을 SOC [%]로 변경
 grid on;
+
+yyaxis right
+hI2 = plot(t, I, 'LineWidth', 1.0); hold on;
+ylabel('Current [mA]');
+
+% 동일한 마커/경계선 오버레이
+plot(t(start_idx), I(start_idx), 'o', ...
+    'MarkerSize', 6, 'LineWidth', 1.2, ...
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'none');
+plot(t(end_idx), I(end_idx), 'o', ...
+    'MarkerSize', 6, 'LineWidth', 1.2, ...
+    'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'none');
+
+for i = 1:Nend
+    xline(t(end_idx(i)), 'k:', 'LineWidth', 2.0);
+end
+
+xlabel('Time [s]');
+title('SOC & Current vs Time');
+lg2 = legend([hI2, hSOC], {'Current','SOC'}, 'Location','best');
+set(lg2, 'Box','off', 'FontSize',9);
+
+ax2 = gca; ax2.Position = [0.08 0.12 0.86 0.78];  % 여백 축소
+
+
+%% ====== 6) Trips 구조체 저장 (.mat) ======
+outfile = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\Trips.mat';
+save(outfile, 'data1', '-v7.3');
+
+
+
