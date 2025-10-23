@@ -4,6 +4,10 @@ clc; clear; close all;
 file = 'G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\데이터2.xlsx';
 assert(exist(file,'file')==2, "파일을 찾을 수 없습니다: %s", file);
 
+load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\rOCV.mat');
+
+
+
 %% ====== 1) 엑셀 읽기 (1행 헤더, 2행부터 숫자) ======
 % [time/s, Ewe/V, I/mA, Re(Z)/Ohm, -Im(Z)/Ohm]
 T = readmatrix(file, 'NumHeaderLines', 1);
@@ -12,8 +16,8 @@ T = readmatrix(file, 'NumHeaderLines', 1);
 t      = double(T(:,1));   % [s]
 V      = double(T(:,2));   % [V]
 I      = double(T(:,3));   % [mA]
-ReZ    = double(T(:,4));   %#ok<NASGU>
-NegImZ = double(T(:,5));   %#ok<NASGU>
+ReZ    = double(T(:,4));   
+NegImZ = double(T(:,5));   
 
 %% ====== 2) 전류=0 구간(50분 이상 연속) 탐지 -> 결과는 모두 double 배열 ======
 I_zero_tol = 1e-3;             % 0 판정 허용오차 [mA]
@@ -115,7 +119,7 @@ hEnd = plot(t(end_idx), I(end_idx), 'o', ...
 % ---- Trip 경계(검은색 수직 점선, **REST END 위치**, 굵게) ----
 hb = gobjects(0);
 for i = 1:Nend
-    hb(end+1) = xline(t(end_idx(i)), 'k:', 'LineWidth', 2.0); %#ok<AGROW>
+    hb(end+1) = xline(t(end_idx(i)), 'k:', 'LineWidth', 2.0); 
 end
 
 % ---- Trip 라벨: 각 구간 중앙 시점에 'Trip k' ----
