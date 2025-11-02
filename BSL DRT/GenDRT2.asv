@@ -1,27 +1,36 @@
-clc;clear;close all;
-
 %% ====== 0) 로드 ======
-load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\Trips.mat', 'data1');
-load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\rOCV.mat');  % soc_values/ocv_values or OCV_golden.OCVdis
+clc; clear; close all;
 
-% SOC-OCV 테이블 정리
-if exist('OCV_golden','var') && isfield(OCV_golden,'OCVdis')
-    soc_values = double(OCV_golden.OCVdis(:,1));
-    ocv_values = double(OCV_golden.OCVdis(:,2));
-elseif exist('soc_values','var') && exist('ocv_values','var')
-    soc_values = double(soc_values(:));
-    ocv_values = double(ocv_values(:));
-else
-    error('SOC-OCV 데이터(soc_values/ocv_values 또는 OCV_golden.OCVdis)가 필요합니다.');
-end
+% Trip 데이터
+load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\Trips.mat', 'data1');
+
+% OCV_from_Data1.mat에서 OCV.dis 읽기 (1열 SOC, 2열 OCV)
+S = load('G:\공유 드라이브\Battery Software Lab\Projects\DRT\2025 DRT 최종본 논문\BSL DRT\OCV_from_Data1.mat','OCV');
+assert(isfield(S,'OCV') && isfield(S.OCV,'dis'), 'OCV_from_Data1.mat에 OCV.dis가 없습니다.');
+dis = double(S.OCV.dis);
+
+% 원시 SOC/OCV 추출 및 유효값 필터
+soc_raw = dis(:,1);
+ocv_raw = dis(:,2);
+valid = isfinite(soc_raw) & isfinite(ocv_raw);
+soc_raw = soc_raw(valid);
+ocv_raw = ocv_raw(valid);
+
+% OCV 값 기준으로 중복 제거 (순서 보존: 'stable')
+[ocv_unique, ia] = unique(ocv_raw, 'stable');
+soc_unique = soc_raw(ia);
+
+% (선택) SOC 오름차순으로 정렬해 사용
+[soc_values, idx] = sort(soc_unique, 'ascend');
+ocv_values = ocv_unique(idx);
+
+% 이후 코드에서 soc_values / ocv_values 사용
 
 %% ====== 1) 파라미터 ======
 trip_to_fit = 1;         % 예) Trip1 (Trip 번호만 변경해서 사용)
 n           = 201;       % RC 개수
-dur         = 300;       % tau_max [s]
+dur         = 300;        % tau_max [s]
 lambda_hat  = 1;         % 규제강도(요청대로 고정)
-
-tripLabel = sprintf('Trip %d', trip_to_fit);   % ← 추가: 플롯용 라벨
 
 %% ====== 2) Trip 데이터 준비 ======
 tripName = sprintf('Trip%d', trip_to_fit);
@@ -92,7 +101,7 @@ else
 end
 
 % ------------------ (a) 전체 구간 (상대시간) ------------------
-fig1 = figure('Color','w', 'Name', sprintf('%s - Full Duration', tripLabel));  % ← 창 이름에 Trip 표시
+figure('Color','w');
 
 yyaxis left
 hV_meas = plot(t_rel_plot, Vsd_plot, 'LineWidth', 1.4, 'Color', cV_meas, 'DisplayName','Measured V'); hold on;
@@ -108,10 +117,9 @@ ax.YColor = cI; % 오른쪽 y축(전류) 색을 전류색으로
 
 xlabel('Time from trip start [s]');
 legend([hV_meas, hV_est, hI], {'Measured V','Estimated V','Current'}, 'Location','best');
-title(sprintf('%s | Full duration (from trip start)', tripLabel));   % ← 제목에 Trip 표시
 
 % ------------------ (b) 0~100 s 확대 (상대시간) ------------------
-fig2 = figure('Color','w', 'Name', sprintf('%s - Zoom 0–100 s', tripLabel));  % ← 창 이름에 Trip 표시
+figure('Color','w');
 
 yyaxis left
 hV_meas2 = plot(t_rel_plot, Vsd_plot, 'LineWidth', 1.4, 'Color', cV_meas, 'DisplayName','Measured V'); hold on;
@@ -129,8 +137,7 @@ xlabel('Time from trip start [s]');
 zoom_end = min(100, t_rel_plot(end));   % 데이터가 100s 미만이어도 안전
 xlim([0 zoom_end]);
 legend([hV_meas2, hV_est2, hI2], {'Measured V','Estimated V','Current'}, 'Location','best');
-title(sprintf('%s | Zoom: 0–100 s (from trip start)', tripLabel));  % ← 제목에 Trip 표시
-
+title('Zoom: 0–100 s (from trip start)');
 
 %% ====== 5) 참고: 잔차(RMSE) 출력 ======
 rmse = sqrt(mean((Vsd - V_est).^2));
