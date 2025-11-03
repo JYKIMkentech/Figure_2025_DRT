@@ -48,7 +48,7 @@ dt = [0; diff(t)];
 %% ====== 3) DRT 추정 수행 ======
 % 주의: I가 mA면 R0_est 단위는 V/mA(≈kΩ). A 단위를 원하면 I = I/1000; 로 변환 후 실행.
 [gamma_est, R0_est, V_est, theta_discrete, W, y, OCV] = ...
-    DRT_estimation_aug(t, I, Vsd, lambda_hat, n, dt, dur, SOC, soc_values, ocv_values);
+    DRT_estimation_aug2(t, I, Vsd, lambda_hat, n, dt, dur, SOC, soc_values, ocv_values);
 
 fprintf('Trip %d: R0_est = %.6g (단위는 입력 전류 단위에 의존)\n', trip_to_fit, R0_est);
 
