@@ -59,35 +59,46 @@ cV_est  = [0.7,  0,    0   ];   % 초록: Estimated V
 cI      = [0,    0.7,  0.7 ];   % 빨강: Current
 
 % --- 플롯 전용: 직전 REST END 한 점을 앞에 1개 덧붙여서
-%     V_est(prev) = OCV(prev) 가 보이도록 함 (피팅/RMSE에는 영향 X)
-usePrevPoint = (trip_to_fit >= 1) && isfield(data1, sprintf('Trip%d',trip_to_fit-1));
-if usePrevPoint
+% --- 플롯 전용: 직전 Trip의 마지막 샘플 3개를 앞에 덧붙여서
+%     "그 3개 지점에서는 V_est == V_meas"가 보이도록 함 (피팅/RMSE에는 영향 X)
+numPrevPlotPts = 2;
+usePrevPoints = (trip_to_fit >= 1) && isfield(data1, sprintf('Trip%d',trip_to_fit-1));
+
+if usePrevPoints
     prevTripName = sprintf('Trip%d', trip_to_fit-1);
     Mprev = data1.(prevTripName);
-    prevRow = Mprev(end,:);                 % [t_prev, I_prev(≈0), V_prev, (SOC_prev)]
-    t0p   = prevRow(1);
-    I0p   = prevRow(2);
-    V0p   = prevRow(3);
 
-    % prev SOC 있으면 사용, 없으면 V->SOC 역보간 후 OCV 계산
-    if size(Mprev,2) >= 4 && ~isnan(prevRow(4))
-        SOC0p = prevRow(4);
+    % prev에서 마지막 3개 행 가져오기 (cols: [t I V (SOC optional)])
+    last_idx = max(1, size(Mprev,1) - numPrevPlotPts + 1) : size(Mprev,1);
+    prevRows = Mprev(last_idx, :);
+
+    t_prev   = prevRows(:,1);
+    I_prev   = prevRows(:,2);
+    V_prev   = prevRows(:,3);
+
+    % prev SOC 있으면 사용, 없으면 V->SOC 역보간
+    if size(prevRows,2) >= 4 && any(~isnan(prevRows(:,4)))
+        SOC_prev = prevRows(:,4);
     else
-        SOC0p = interp1(ocv_values, soc_values, V0p, 'linear', 'extrap');
+        % V->SOC 역보간: ocv_values(soc) 단조 가정
+        SOC_prev = interp1(ocv_values, soc_values, V_prev, 'linear', 'extrap');
     end
-    OCV0p = interp1(soc_values, ocv_values, SOC0p, 'linear', 'extrap');
 
-    % 플롯용 시퀀스 (맨 앞에 prev REST END 샘플 1개 추가)
-    t_plot   = [t0p;   t   ];
-    I_plot   = [I0p;   I   ];
-    Vsd_plot = [V0p;   Vsd ];
-    Vest_plot= [OCV0p; V_est];
+    % prev에서의 OCV (참고용) — 플로팅에는 Vest_prev = V_prev 를 직접 사용
+    % OCV_prev = interp1(soc_values, ocv_values, SOC_prev, 'linear', 'extrap');
 
-    % Trip 시작을 0초로 맞춘 상대시간
+    % === 플로팅용 벡터 구성 (앞에 prev 3개 + 현 Trip 전 구간)
+    t_plot    = [t_prev;   t        ];
+    I_plot    = [I_prev;   I        ];
+    Vsd_plot  = [V_prev;   Vsd      ];
+    Vest_plot = [V_prev;   V_est    ];  % 핵심: prev 3개 지점에서 V_est == V_meas
+
+    % 상대시간(붙인 첫 샘플을 0초로)
     t_rel_plot = t_plot - t_plot(1);
+
 else
-    % 이전 점이 없으면 원래 벡터 그대로 사용
-    t_plot = t; I_plot = I; Vsd_plot = Vsd; Vest_plot = V_est;
+    % 이전 포인트가 없으면 원래 벡터 그대로 사용
+    t_plot    = t;    I_plot   = I;    Vsd_plot = Vsd;   Vest_plot = V_est;
     t_rel_plot = t - t(1);
 end
 
